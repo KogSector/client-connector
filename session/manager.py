@@ -25,6 +25,7 @@ class ClientSession(BaseModel):
     request_count: int = 0
     user_id: str | None = None
     api_key_id: str | None = None
+    tenant_id: str | None = None  # Multi-tenant support
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     class Config:
@@ -39,6 +40,15 @@ class ClientSession(BaseModel):
         """Check if session has expired."""
         expiry = self.last_activity + timedelta(minutes=timeout_minutes)
         return datetime.utcnow() > expiry
+
+    def get_context(self) -> dict[str, Any]:
+        """Get context for MCP requests (used for multi-tenant routing)."""
+        return {
+            "session_id": str(self.id),
+            "user_id": self.user_id,
+            "tenant_id": self.tenant_id,
+            "api_key_id": self.api_key_id,
+        }
 
 
 class SessionManager:
@@ -69,19 +79,25 @@ class SessionManager:
         self,
         user_id: str | None = None,
         api_key_id: str | None = None,
+        tenant_id: str | None = None,
     ) -> ClientSession:
         """Create a new client session."""
         async with self._lock:
             if len(self._sessions) >= self.settings.max_concurrent_clients:
                 raise RuntimeError("Maximum concurrent clients reached")
 
-            session = ClientSession(user_id=user_id, api_key_id=api_key_id)
+            session = ClientSession(
+                user_id=user_id,
+                api_key_id=api_key_id,
+                tenant_id=tenant_id,
+            )
             self._sessions[session.id] = session
             
             logger.info(
                 "Session created",
                 session_id=str(session.id),
                 user_id=user_id,
+                tenant_id=tenant_id,
             )
             return session
 
