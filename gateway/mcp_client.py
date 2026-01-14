@@ -2,7 +2,7 @@
 
 import asyncio
 import json
-import subprocess
+import subprocess  # nosec B404 - Intentional use for spawning trusted MCP server process
 from typing import AsyncIterator
 
 import httpx
@@ -43,7 +43,8 @@ class McpClient:
         logger.info("Starting mcp-server subprocess", path=self.settings.mcp_server_path)
         
         try:
-            self._process = subprocess.Popen(
+            # Spawning trusted local MCP server executable with controlled path
+            self._process = subprocess.Popen(  # nosec B603
                 [self.settings.mcp_server_path],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
