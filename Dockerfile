@@ -1,4 +1,10 @@
-FROM python:3.14-slim
+# =============================================================================
+# Client Connector Service - Dockerfile
+# Port: 3020
+# Role: Gateway for AI agents to connect to ConHub infrastructure
+# =============================================================================
+
+FROM python:3.13-slim
 
 WORKDIR /app
 
