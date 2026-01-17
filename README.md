@@ -35,7 +35,7 @@ python -m app.main
 ### WebSocket (Recommended)
 
 ```javascript
-const ws = new WebSocket('ws://localhost:8095/mcp/ws?key=API_KEY');
+const ws = new WebSocket('ws://localhost:3020/mcp/ws?key=API_KEY');
 ```
 
 ### For IDEs
@@ -63,7 +63,7 @@ const ws = new WebSocket('ws://localhost:8095/mcp/ws?key=API_KEY');
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | 8095 | Server port |
+| `PORT` | 3020 | Server port |
 | `MCP_SERVER_MODE` | subprocess | subprocess or http |
 | `RATE_LIMIT_PER_MINUTE` | 60 | Rate limit |
 
