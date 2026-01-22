@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     log_format: Literal["json", "console"] = "json"
 
+    # Feature Toggle
+    feature_toggle_url: str = "http://localhost:3099"
+
     # CORS
     cors_origins: str = "http://localhost:3000,http://localhost:8080"
 
