@@ -3,7 +3,7 @@ name = "client-connector"
 version = "0.1.0"
 description = "MCP Host Connector - Gateway for AI agents to connect to ConHub infrastructure"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 license = {text = "MIT"}
 
 dependencies = [
@@ -59,7 +59,7 @@ testpaths = ["tests"]
 
 [tool.black]
 line-length = 100
-target-version = ["py311"]
+target-version = ["py314"]
 
 [tool.ruff]
 line-length = 100
