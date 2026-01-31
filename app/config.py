@@ -25,16 +25,25 @@ class Settings(BaseSettings):
     # MCP Server
     mcp_server_path: str = "../mcp-server/target/release/mcp-service.exe"
     mcp_server_mode: Literal["subprocess", "http"] = "subprocess"
-    mcp_server_url: str = "http://localhost:3004"
+    mcp_server_url: str = Field(
+        default="http://localhost:3004",
+        alias="MCP_SERVER_URL"
+    )
 
     # Authentication
-    auth_middleware_url: str = "http://localhost:3001"
+    auth_middleware_url: str = Field(
+        default="http://localhost:3010",
+        alias="AUTH_MIDDLEWARE_URL"
+    )
     jwt_secret: str = Field(default="change-me-in-production")
     jwt_algorithm: str = "HS256"
     api_key_header: str = "X-API-Key"
 
     # Database
-    database_url: str = "postgresql+asyncpg://conhub:conhub_password@localhost:5432/conhub"
+    database_url: str = Field(
+        default="postgresql+asyncpg://conhub:conhub_password@localhost:5432/conhub",
+        alias="DATABASE_URL"
+    )
 
     # Rate Limiting
     rate_limit_per_minute: int = 60
@@ -49,10 +58,16 @@ class Settings(BaseSettings):
     log_format: Literal["json", "console"] = "json"
 
     # Feature Toggle
-    feature_toggle_url: str = "http://localhost:3099"
+    feature_toggle_url: str = Field(
+        default="http://localhost:3099",
+        alias="FEATURE_TOGGLE_SERVICE_URL"
+    )
 
     # CORS
-    cors_origins: str = "http://localhost:3000,http://localhost:8080"
+    cors_origins: str = Field(
+        default="http://localhost:3000,http://localhost:8080",
+        alias="CORS_ORIGINS"
+    )
 
     @property
     def cors_origins_list(self) -> list[str]:
