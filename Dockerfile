@@ -4,7 +4,7 @@
 # Role: Gateway for AI agents to connect to ConHub infrastructure
 # =============================================================================
 
-FROM python:3.13.2-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
