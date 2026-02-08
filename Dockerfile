@@ -28,11 +28,11 @@ RUN pip install --no-cache-dir \
     "python-dotenv>=1.0.0"
 
 # Copy source code
-COPY app ./app
+COPY shared-middleware ./shared-middleware
 COPY auth ./auth
 COPY gateway ./gateway
 COPY models ./models
-COPY session ./session
+
 COPY transports ./transports
 
 # Create non-root user

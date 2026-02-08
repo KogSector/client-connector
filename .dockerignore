@@ -1,80 +1,15 @@
-# =============================================================================
-# Docker Ignore - Python Service
-# =============================================================================
+# Node Service .dockerignore
+# Ignore everything by default
+**
 
-# Git
-.git
-.gitignore
-.gitattributes
+# Allow build context essentials
+!client-connector/
+!shared/
 
-# Environment files (NEVER include in images)
-.env
-.env.*
-*.env
-.env.local
-.env.development
-.env.production
-
-# IDE/Editor
-.vscode
-.idea
-*.swp
-*.swo
-*~
-
-# Python artifacts
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-
-# Virtual environments
-.venv/
-venv/
-ENV/
-
-# Documentation
-docs/
-*.md
-!README.md
-LICENSE
-
-# Tests (not needed in production image)
-tests/
-test/
-*_test.py
-conftest.py
-
-# CI/CD
-.github/
-.gitlab-ci.yml
-.dockerignore
-Dockerfile*
-
-# Logs
-*.log
-logs/
-
-# Temporary files
-tmp/
-temp/
-*.tmp
+# Specific ignores
+client-connector/node_modules
+client-connector/dist
+client-connector/.env
+client-connector/coverage
+shared/node_modules
+shared/dist
