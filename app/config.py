@@ -23,25 +23,20 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # MCP Server
-    mcp_server_path: str = "../mcp-server/target/release/mcp-service.exe"
-    mcp_server_mode: Literal["subprocess", "http"] = "subprocess"
-    mcp_server_url: str = Field(
-        default="http://localhost:3004",
-        alias="MCP_SERVER_URL"
-    )
+    mcp_server_path: str = Field(alias="MCP_SERVER_PATH")
+    mcp_server_mode: Literal["subprocess", "http"] = Field(default="subprocess", alias="MCP_SERVER_MODE")
+    mcp_server_url: str = Field(alias="MCP_SERVICE_URL")
 
     # Authentication
     auth_middleware_url: str = Field(
-        default="http://localhost:3010",
-        alias="AUTH_MIDDLEWARE_URL"
+        alias="AUTH_SERVICE_URL"
     )
-    jwt_secret: str = Field(default="change-me-in-production")
+    jwt_secret: str = Field(alias="JWT_SECRET")
     jwt_algorithm: str = "HS256"
     api_key_header: str = "X-API-Key"
 
     # Database
     database_url: str = Field(
-        default="postgresql+asyncpg://conhub:conhub_password@localhost:5432/conhub",
         alias="DATABASE_URL"
     )
 
@@ -59,13 +54,11 @@ class Settings(BaseSettings):
 
     # Feature Toggle
     feature_toggle_url: str = Field(
-        default="http://localhost:3099",
         alias="FEATURE_TOGGLE_SERVICE_URL"
     )
 
     # CORS
     cors_origins: str = Field(
-        default="http://localhost:3000,http://localhost:8080",
         alias="CORS_ORIGINS"
     )
 
