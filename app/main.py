@@ -13,10 +13,10 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import Settings, get_settings
-from auth import AuthUser, get_current_user
-from gateway import get_mcp_client, shutdown_mcp_client
-from session import get_session_manager, shutdown_session_manager
-from transports import websocket_router
+from app.auth import AuthUser, get_current_user
+from app.services import get_mcp_client, shutdown_mcp_client
+from app.services import get_session_manager, shutdown_session_manager
+from app.api import websocket_router
 
 # Configure structured logging
 structlog.configure(

@@ -23,21 +23,21 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # MCP Server
-    mcp_server_path: str = Field(alias="MCP_SERVER_PATH")
-    mcp_server_mode: Literal["subprocess", "http"] = Field(default="subprocess", alias="MCP_SERVER_MODE")
-    mcp_server_url: str = Field(alias="MCP_SERVICE_URL")
+    mcp_server_path: str | None = Field(default=None, alias="MCP_SERVER_PATH")
+    mcp_server_mode: Literal["subprocess", "http"] = Field(default="http", alias="MCP_SERVER_MODE")
+    mcp_server_url: str = Field(alias="MCP_SERVER_URL")
 
     # Authentication
     auth_middleware_url: str = Field(
-        alias="AUTH_SERVICE_URL"
+        alias="AUTH_MIDDLEWARE_URL"
     )
-    jwt_secret: str = Field(alias="JWT_SECRET")
+    jwt_secret: str = Field(default="dev_secret_key", alias="JWT_SECRET")
     jwt_algorithm: str = "HS256"
     api_key_header: str = "X-API-Key"
 
     # Database
     database_url: str = Field(
-        alias="DATABASE_URL"
+        alias="POSTGRES_URL"
     )
 
     # Rate Limiting

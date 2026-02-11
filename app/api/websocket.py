@@ -9,16 +9,16 @@ import structlog
 from fastapi import APIRouter, Depends, Header, Query, WebSocket, WebSocketDisconnect, status
 
 from app.config import get_settings
-from auth import AuthUser, validate_api_key, validate_jwt_token
-from gateway import get_mcp_client
-from models import (
+from app.auth import AuthUser, validate_api_key, validate_jwt_token
+from app.services import get_mcp_client
+from app.schemas import (
     ClientInfo,
     ConnectionState,
     JsonRpcError,
     JsonRpcRequest,
     JsonRpcResponse,
 )
-from session import ClientSession, get_session_manager
+from app.services import ClientSession, get_session_manager
 
 logger = structlog.get_logger()
 router = APIRouter()

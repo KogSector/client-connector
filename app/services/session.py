@@ -9,7 +9,7 @@ import structlog
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
-from models import ClientInfo, ConnectionState
+from app.schemas import ClientInfo, ConnectionState
 
 logger = structlog.get_logger()
 

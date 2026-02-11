@@ -1,6 +1,6 @@
 """MCP types module."""
 
-from .mcp_types import (
+from .mcp import (
     Capabilities,
     ClientInfo,
     ConnectionState,

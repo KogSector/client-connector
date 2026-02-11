@@ -9,7 +9,7 @@ import httpx
 import structlog
 
 from app.config import get_settings
-from models import JsonRpcRequest, JsonRpcResponse
+from app.schemas import JsonRpcRequest, JsonRpcResponse
 
 logger = structlog.get_logger()
 
