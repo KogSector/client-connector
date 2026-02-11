@@ -8,3 +8,5 @@ coverage/
 !.env.example
 npm-debug.log
 yarn-error.log
+*.pyc
+__pycache__
