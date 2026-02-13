@@ -29,7 +29,7 @@ RUN pip install --no-cache-dir \
 
 # Copy source code
 COPY client-connector/app ./app
-COPY shared-middleware ./shared-middleware
+COPY ../shared-middleware ./shared-middleware
 
 # Create non-root user
 RUN useradd -m appuser && chown -R appuser:appuser /app
