@@ -1,6 +1,26 @@
 # =============================================================================
 # Client Connector - Kubernetes Deployment
+# Covers ALL .env variables via ConfigMap (non-sensitive)
 # =============================================================================
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: client-connector-config
+  namespace: confuse-platform
+data:
+  SERVICE_NAME: "client-connector"
+  PORT: "8095"
+  GRPC_ENABLED: "false"
+  GRPC_PORT: "50059"
+  HOST: "0.0.0.0"
+  ENVIRONMENT: "production"
+  # Upstream Services
+  API_BACKEND_URL: "http://api-backend:8000"
+  AUTH_SERVICE_URL: "http://auth-middleware:3010"
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -31,10 +51,6 @@ spec:
           name: http
         envFrom:
         - configMapRef:
-            name: global-config
-        - secretRef:
-            name: global-secrets
-        - configMapRef:
             name: client-connector-config
         resources:
           requests:
@@ -59,9 +75,6 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
-        securityContext:
-          seccompProfile:
-            type: RuntimeDefault
 
 ---
 apiVersion: v1
@@ -69,8 +82,6 @@ kind: Service
 metadata:
   name: client-connector
   namespace: confuse-platform
-  labels:
-    app: client-connector
 spec:
   selector:
     app: client-connector
