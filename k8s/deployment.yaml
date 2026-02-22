@@ -1,0 +1,82 @@
+# =============================================================================
+# Client Connector - Kubernetes Deployment
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-connector
+  namespace: confuse-platform
+  labels:
+    app: client-connector
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: client-connector
+  template:
+    metadata:
+      labels:
+        app: client-connector
+        version: v1
+    spec:
+      imagePullSecrets:
+      - name: acr-secret
+      containers:
+      - name: client-connector
+        image: "confuseimgr.azurecr.io/client-connector:latest"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8095
+          name: http
+        envFrom:
+        - configMapRef:
+            name: global-config
+        - secretRef:
+            name: global-secrets
+        - configMapRef:
+            name: client-connector-config
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "300m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8095
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8095
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          seccompProfile:
+            type: RuntimeDefault
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-connector
+  namespace: confuse-platform
+  labels:
+    app: client-connector
+spec:
+  selector:
+    app: client-connector
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8095
+    targetPort: 8095
+  type: ClusterIP
