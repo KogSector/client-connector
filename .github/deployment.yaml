@@ -1,24 +1,7 @@
 # =============================================================================
 # Client Connector - Kubernetes Deployment
-# Covers ALL .env variables via ConfigMap (non-sensitive)
+# Uses dynamically generated Secret from .env file via CI/CD
 # =============================================================================
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: client-connector-config
-  namespace: confuse-platform
-data:
-  SERVICE_NAME: "client-connector"
-  PORT: "8095"
-  GRPC_ENABLED: "false"
-  GRPC_PORT: "50059"
-  HOST: "0.0.0.0"
-  ENVIRONMENT: "production"
-  # Upstream Services
-  API_BACKEND_URL: "http://api-backend:8000"
-  AUTH_SERVICE_URL: "http://auth-middleware:3010"
 
 ---
 apiVersion: apps/v1
@@ -50,8 +33,8 @@ spec:
         - containerPort: 8095
           name: http
         envFrom:
-        - configMapRef:
-            name: client-connector-config
+        - secretRef:
+            name: client-connector-secrets
         resources:
           requests:
             memory: "128Mi"
