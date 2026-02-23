@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     # Authentication
     auth_middleware_url: str = Field(
-        alias="AUTH_MIDDLEWARE_URL"
+        alias="AUTH_MIDDLEWARE_GRPC_ADDR"
     )
     jwt_secret: str = Field(default="dev_secret_key", alias="JWT_SECRET")
     jwt_algorithm: str = "HS256"
