@@ -33,8 +33,10 @@ spec:
         - containerPort: 8095
           name: http
         envFrom:
+        - configMapRef:
+            name: confuse-config
         - secretRef:
-            name: client-connector-secrets
+            name: confuse-secrets
         resources:
           requests:
             memory: "128Mi"
