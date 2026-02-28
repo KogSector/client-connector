@@ -52,6 +52,16 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     log_format: Literal["json", "console"] = "json"
 
+    # Downstream Services (for query processing pipeline)
+    data_vent_url: str = Field(
+        default="http://data-vent:3005",
+        alias="DATA_VENT_URL"
+    )
+    embeddings_service_url: str = Field(
+        default="http://embeddings-service:3001",
+        alias="EMBEDDINGS_SERVICE_URL"
+    )
+
     # Feature Toggle
     feature_toggle_url: str = Field(
         alias="FEATURE_TOGGLE_SERVICE_URL"

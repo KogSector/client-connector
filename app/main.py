@@ -16,6 +16,7 @@ from app.config import Settings, get_settings
 from app.auth import AuthUser, get_current_user
 from app.services import get_mcp_client, shutdown_mcp_client
 from app.services import get_session_manager, shutdown_session_manager
+from app.services.query_processor import QueryProcessor
 from app.api import websocket_router
 
 # Configure structured logging
@@ -40,9 +41,19 @@ structlog.configure(
 logger = structlog.get_logger()
 
 
+# Global query processor instance
+_query_processor: QueryProcessor | None = None
+
+
+async def get_query_processor() -> QueryProcessor:
+    """Get the global query processor instance."""
+    return _query_processor
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
+    global _query_processor
     logger.info("Starting Client Connector service")
     
     # Initialize services
@@ -64,6 +75,16 @@ async def lifespan(app: FastAPI):
     await get_session_manager()
     logger.info("Session manager started")
     
+    # Initialize query processor for the distributed pipeline
+    _query_processor = QueryProcessor(
+        data_vent_url=settings.data_vent_url,
+        embeddings_service_url=settings.embeddings_service_url,
+    )
+    await _query_processor.initialize()
+    logger.info("Query processor initialized",
+                data_vent=settings.data_vent_url,
+                embeddings=settings.embeddings_service_url)
+    
     logger.info(
         "Client Connector ready",
         host=settings.host,
@@ -74,6 +95,8 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     logger.info("Shutting down Client Connector")
+    if _query_processor:
+        await _query_processor.close()
     await shutdown_mcp_client()
     await shutdown_session_manager()
     logger.info("Client Connector stopped")
@@ -103,6 +126,29 @@ def create_app() -> FastAPI:
     
     # Mount routers
     app.include_router(websocket_router, prefix="/mcp", tags=["MCP"])
+    
+    # Query endpoint — semantic search via data-vent pipeline
+    @app.post("/api/v1/query")
+    async def query_knowledge(
+        request: dict,
+        user: AuthUser = Depends(get_current_user),
+    ) -> dict[str, Any]:
+        """Query the knowledge base using the distributed pipeline."""
+        processor = await get_query_processor()
+        if not processor:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Query processor not initialized",
+            )
+        
+        result = await processor.process_query(
+            query=request.get("query", ""),
+            source_ids=request.get("source_ids"),
+            limit=request.get("limit", 20),
+            search_type=request.get("search_type", "hybrid"),
+        )
+        
+        return processor.format_mcp_response(result)
     
     # Health endpoint
     @app.get("/health")
