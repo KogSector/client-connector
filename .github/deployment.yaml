@@ -8,7 +8,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: client-connector
-  namespace: confuse-platform
+  namespace: confuse
   labels:
     app: client-connector
     version: v1
@@ -27,7 +27,7 @@ spec:
       - name: acr-secret
       containers:
       - name: client-connector
-        image: "confuseimgr.azurecr.io/client-connector:latest"
+        image: "confuseimgr.azurecr.io/client-connector:1.0"
         imagePullPolicy: Always
         ports:
         - containerPort: 8095
@@ -66,7 +66,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: client-connector
-  namespace: confuse-platform
+  namespace: confuse
 spec:
   selector:
     app: client-connector
