@@ -1,12 +1,10 @@
 """WebSocket transport for MCP protocol."""
 
-import asyncio
 import json
 from typing import Any
-from uuid import UUID
 
 import structlog
-from fastapi import APIRouter, Depends, Header, Query, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Header, WebSocket, WebSocketDisconnect, status
 
 from app.config import get_settings
 from app.auth import AuthUser, validate_api_key, validate_jwt_token
@@ -108,43 +106,46 @@ class WebSocketConnection:
 
 
 async def authenticate_websocket(
-    token: str | None = None,
-    api_key: str | None = None,
+    authorization: str | None = None,
+    x_api_key: str | None = None,
 ) -> AuthUser | None:
-    """Authenticate WebSocket connection."""
+    """Authenticate WebSocket connection.
+
+    Accepts credentials from HTTP headers only:
+    - ``Authorization: Bearer <jwt>``
+    - ``X-API-Key: <key>``
+    """
     settings = get_settings()
-    
-    if token:
+
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.removeprefix("Bearer ")
         return await validate_jwt_token(token, settings)
-    
-    if api_key:
-        return await validate_api_key(api_key, settings)
-    
+
+    if x_api_key:
+        return await validate_api_key(x_api_key, settings)
+
     return None
 
 
 @router.websocket("/ws")
 async def websocket_mcp_endpoint(
     websocket: WebSocket,
-    token: str | None = Query(default=None, description="JWT token"),
-    api_key: str | None = Query(default=None, alias="key", description="API key"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
 ):
     """WebSocket endpoint for MCP protocol.
-    
-    Connect with:
-    - ws://host:port/mcp/ws?token=<jwt>
-    - ws://host:port/mcp/ws?key=<api_key>
-    
-    For local development, authentication can be optional.
+
+    Clients must supply exactly one of:
+    - ``Authorization: Bearer <jwt>`` header
+    - ``X-API-Key: <key>`` header
+
+    Missing or invalid credentials close the socket with code 4001.
     """
-    settings = get_settings()
-    
-    # Authenticate
-    user = await authenticate_websocket(token, api_key)
-    
-    # In production, require auth; in debug mode, allow anonymous
-    if not settings.debug and not user:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+    # Authenticate — always required, no debug bypass
+    user = await authenticate_websocket(authorization, x_api_key)
+
+    if not user:
+        await websocket.close(code=4001)
         return
 
     # Accept connection

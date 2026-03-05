@@ -40,6 +40,8 @@ dependencies = [
     
     # Environment
     "python-dotenv>=1.0.0",
+    "uuid6>=2024.1.0",
+    "redis>=5.0.0",
 ]
 
 [project.optional-dependencies]
@@ -50,6 +52,7 @@ dev = [
     "httpx>=0.26.0",
     "black>=24.1.0",
     "ruff>=0.1.0",
+    "fakeredis>=2.20.0",
 ]
 
 [build-system]

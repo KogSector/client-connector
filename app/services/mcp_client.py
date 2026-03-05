@@ -39,11 +39,26 @@ class McpClient:
             await self._start_http()
 
     async def _start_subprocess(self) -> None:
-        """Start mcp-server as subprocess."""
+        """Start mcp-server as subprocess.
+
+        Only permitted when ENV=local. Raises AssertionError immediately if
+        called in any other environment so the process crashes rather than
+        spawning an unintended child process in staging or production.
+        """
+        assert self.settings.env == "local", (
+            f"Subprocess mode forbidden in ENV={self.settings.env!r}. "
+            "MCP subprocess mode is only allowed when ENV=local."
+        )
+        assert self.settings.mcp_server_path, (
+            "MCP_SERVER_PATH must be set when mcp_server_mode='subprocess'."
+        )
+
         logger.info("Starting mcp-server subprocess", path=self.settings.mcp_server_path)
-        
+
         try:
-            # Spawning trusted local MCP server executable with controlled path
+            # shell=False (default): argument list prevents shell-injection.
+            # The executable path comes from a validated settings field, not
+            # user input, so B603 is intentionally suppressed.
             self._process = subprocess.Popen(  # nosec B603
                 [self.settings.mcp_server_path],
                 stdin=subprocess.PIPE,
@@ -52,11 +67,13 @@ class McpClient:
                 text=True,
                 bufsize=1,  # Line buffered
             )
-            
+
             # Start background reader task
             self._read_task = asyncio.create_task(self._read_responses())
-            
+
             logger.info("mcp-server subprocess started", pid=self._process.pid)
+        except AssertionError:
+            raise  # propagate — must not be swallowed
         except Exception as e:
             logger.error("Failed to start mcp-server", error=str(e))
             raise

@@ -8,6 +8,8 @@ import structlog
 import os
 import sys
 
+from app.grpc.channel import create_grpc_channel
+
 logger = structlog.get_logger()
 
 # Note: Generate from proto with:
@@ -27,10 +29,10 @@ class McpServerClient:
         """Connect to mcp-server via gRPC"""
         mcp_server_addr = os.getenv("MCP_SERVER_GRPC_ADDR", "mcp-server:50056")
         
-        self.channel = grpc.aio.insecure_channel(mcp_server_addr)
+        self.channel = create_grpc_channel(mcp_server_addr)
         # self.stub = mcp_pb2_grpc.McpStub(self.channel)
         
-        logger.info("Connected to mcp-server via gRPC", address=mcp_server_addr)
+        logger.info("Connected to mcp-server via gRPC (TLS)", address=mcp_server_addr)
     
     async def list_tools(self, category: str = None):
         """List available MCP tools"""

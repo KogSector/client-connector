@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package clientconnector;
+
+// The SessionService provides an administrative gRPC API for managing active
+// agent sessions within the Client Connector.
+service SessionService {
+    // Create a new session record.
+    rpc CreateSession(CreateSessionRequest) returns (Session) {}
+    
+    // Retrieve an existing session by its ID.
+    rpc GetSession(GetSessionRequest) returns (Session) {}
+    
+    // Mark a session as closed.
+    rpc CloseSession(CloseSessionRequest) returns (CloseSessionResponse) {}
+    
+    // List all active sessions, optionally filtered by tenant_id.
+    rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse) {}
+}
+
+// ---------------------------------------------------------------------------
+// Core Message
+// ---------------------------------------------------------------------------
+
+message Session {
+    // Unique identifier for the session (UUIDv4).
+    string id = 1;
+    
+    // Stable identifier for the AI agent owning this session.
+    string agent_id = 2;
+    
+    // Optional tenant ID for multi-tenant deployments; empty string if none.
+    string tenant_id = 3;
+    
+    // UTC epoch milliseconds when the session was created.
+    int64 created_at = 4;
+    
+    // UTC epoch milliseconds of the last received frame.
+    int64 last_active = 5;
+    
+    // Free-form JSON string encapsulating implementation-specific metadata
+    // (e.g. negotiated capabilities, client info).
+    string metadata_json = 6;
+}
+
+// ---------------------------------------------------------------------------
+// Request & Response Messages
+// ---------------------------------------------------------------------------
+
+message CreateSessionRequest {
+    string agent_id = 1;
+    string tenant_id = 2;
+    string metadata_json = 3;
+}
+
+message GetSessionRequest {
+    string id = 1;
+}
+
+message CloseSessionRequest {
+    string id = 1;
+}
+
+message CloseSessionResponse {
+    // True if the session was successfully closed, false if it wasn't found 
+    // or was already closed.
+    bool success = 1;
+}
+
+message ListSessionsRequest {
+    // If provided, filters the returned sessions to only those owned by this tenant.
+    string tenant_id = 1;
+}
+
+message ListSessionsResponse {
+    repeated Session sessions = 1;
+}

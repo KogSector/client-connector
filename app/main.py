@@ -11,12 +11,17 @@ from typing import Any
 import structlog
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+import asyncio
 
-from app.config import Settings, get_settings
+from app.config import Settings, get_settings, validate_secrets
+from app.grpc.channel import verify_cert_files
 from app.auth import AuthUser, get_current_user
 from app.services import get_mcp_client, shutdown_mcp_client
 from app.services import get_session_manager, shutdown_session_manager
 from app.services.query_processor import QueryProcessor
+from app.cache import get_redis, close_redis, health_check_redis
+from app.db.connection import async_engine, health_check_db
 from app.api import websocket_router
 
 # Configure structured logging
@@ -54,11 +59,40 @@ async def get_query_processor() -> QueryProcessor:
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     global _query_processor
-    logger.info("Starting Client Connector service")
-    
-    # Initialize services
+
+    # Validate all secrets immediately — crash loudly before any service starts
     settings = get_settings()
+    validate_secrets(settings)
+
+    # Verify TLS cert files exist before any gRPC channel is opened
+    verify_cert_files()
+
+    logger.info("Starting Client Connector service")
+
+    # Log all configuration settings, masking secrets
+    safe_settings = {
+        k: (v if "secret" not in k.lower() and "key" not in k.lower() else "***")
+        for k, v in settings.model_dump().items()
+    }
+    logger.info("Application settings", **safe_settings)
     
+    # Initialize Redis connection pool
+    try:
+        await get_redis()
+        logger.info("Redis cache initialized successfully")
+    except Exception as e:
+        logger.error("Failed to initialize Redis", error=str(e))
+        raise
+
+    # Verify Database connection (since engine is created at module level we just health check)
+    try:
+        db_ok = await health_check_db()
+        if not db_ok:
+            raise RuntimeError("Database health check failed")
+        logger.info("Database engine initialized successfully")
+    except Exception as e:
+        logger.error("Failed to initialize Database engine", error=str(e))
+        raise
     # Start MCP client (connects to/spawns mcp-server)
     try:
         mcp_client = await get_mcp_client()
@@ -79,6 +113,7 @@ async def lifespan(app: FastAPI):
     _query_processor = QueryProcessor(
         data_vent_url=settings.data_vent_url,
         embeddings_service_url=settings.embeddings_service_url,
+        internal_secret=settings.cc_internal_secret,
     )
     await _query_processor.initialize()
     logger.info("Query processor initialized",
@@ -99,6 +134,8 @@ async def lifespan(app: FastAPI):
         await _query_processor.close()
     await shutdown_mcp_client()
     await shutdown_session_manager()
+    await close_redis()
+    await async_engine.dispose()
     logger.info("Client Connector stopped")
 
 
@@ -150,23 +187,42 @@ def create_app() -> FastAPI:
         
         return processor.format_mcp_response(result)
     
-    # Health endpoint
+    # Health and Readiness endpoints
     @app.get("/health")
-    async def health_check() -> dict[str, Any]:
-        """Health check endpoint."""
-        mcp_client = await get_mcp_client()
-        session_manager = await get_session_manager()
-        stats = await session_manager.get_stats()
+    async def get_health() -> JSONResponse:
+        """Health check endpoint checking concurrent dependencies."""
+        redis_ok, db_ok = await asyncio.gather(
+            health_check_redis(),
+            health_check_db()
+        )
         
-        return {
-            "status": "healthy",
-            "service": "client-connector",
-            "mcp_server": {
-                "mode": settings.mcp_server_mode,
-                "running": mcp_client.is_running,
-            },
-            "sessions": stats,
-        }
+        overall_status = "ok" if (redis_ok and db_ok) else "degraded"
+        status_code = 200 if overall_status == "ok" else 503
+        
+        return JSONResponse(
+            status_code=status_code,
+            content={
+                "status": overall_status,
+                "redis": "ok" if redis_ok else "error",
+                "db": "ok" if db_ok else "error",
+            }
+        )
+        
+    @app.get("/ready")
+    async def get_ready() -> JSONResponse:
+        """Readiness check for K8s readinessProbe. Returns 200 if fully healthy."""
+        redis_ok, db_ok = await asyncio.gather(
+            health_check_redis(),
+            health_check_db()
+        )
+        
+        if not (redis_ok and db_ok):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Not fully ready"
+            )
+            
+        return JSONResponse(status_code=200, content={"status": "ready"})
     
     # Admin endpoints
     @app.get("/admin/sessions")

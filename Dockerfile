@@ -25,11 +25,17 @@ RUN pip install --no-cache-dir \
     "sqlalchemy[asyncio]>=2.0.25" \
     "anyio>=4.2.0" \
     "structlog>=24.1.0" \
-    "python-dotenv>=1.0.0"
+    "python-dotenv>=1.0.0" \
+    "grpcio>=1.62.0" \
+    "grpcio-tools>=1.62.0"
 
 # Copy source code
 COPY client-connector/app ./app
+COPY client-connector/proto ./proto
 COPY ../shared-middleware ./shared-middleware
+
+# Compile gRPC stubs
+RUN python -m grpc_tools.protoc -I. --python_out=./app/ --grpc_python_out=./app/ proto/client.proto
 
 # Create non-root user
 RUN useradd -m appuser && chown -R appuser:appuser /app

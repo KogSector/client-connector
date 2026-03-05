@@ -7,6 +7,8 @@ from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field
 import httpx
 
+from app.auth.internal_token import auth_header as _make_auth_header
+
 logger = structlog.get_logger()
 
 
@@ -33,10 +35,25 @@ class QueryProcessor:
         self,
         data_vent_url: str = "http://data-vent:3005",
         embeddings_service_url: str = "http://embeddings-service:3001",
+        internal_secret: str = "",
     ):
+        if not internal_secret:
+            raise ValueError(
+                "QueryProcessor requires internal_secret (CC_INTERNAL_SECRET). "
+                "This must be injected from settings at startup."
+            )
         self.data_vent_url = data_vent_url
         self.embeddings_service_url = embeddings_service_url
+        self._internal_secret = internal_secret
         self._http_client: Optional[httpx.AsyncClient] = None
+
+    def _auth_headers(self) -> dict[str, str]:
+        """Return a fresh Authorization header for each outbound service call.
+
+        A new token is generated per call so tokens rotate automatically
+        within each 60 s window.
+        """
+        return _make_auth_header(self._internal_secret)
     
     async def initialize(self):
         """Initialize HTTP client."""
@@ -120,6 +137,7 @@ class QueryProcessor:
             response = await self._http_client.post(
                 f"{self.embeddings_service_url}/api/v1/generate",
                 json={"text": query},
+                headers=self._auth_headers(),
             )
             response.raise_for_status()
             data = response.json()
@@ -146,6 +164,7 @@ class QueryProcessor:
             response = await self._http_client.post(
                 f"{self.data_vent_url}/api/v1/search",
                 json=payload,
+                headers=self._auth_headers(),
             )
             response.raise_for_status()
             data = response.json()
@@ -179,6 +198,7 @@ class QueryProcessor:
             response = await self._http_client.post(
                 f"{self.data_vent_url}/api/v1/hybrid-search",
                 json=payload,
+                headers=self._auth_headers(),
             )
             response.raise_for_status()
             data = response.json()
