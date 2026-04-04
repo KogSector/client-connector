@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: client-connector-config
+  namespace: confuse
+data:
+  # Service Configuration
+  PORT: "8095"
+  HOST: "0.0.0.0"
+  ENVIRONMENT: "production"
+  
+  # MCP Configuration
+  MCP_SERVER_URL: "http://mcp-server:3006"
+  MCP_SERVER_MODE: "http"
+  
+  # Service Dependencies
+  AUTH_MIDDLEWARE_GRPC_ADDR: "http://auth-middleware:3010"
+  FEATURE_TOGGLE_SERVICE_URL: "http://feature-toggle:3099"
+  DATA_VENT_URL: "http://data-vent:3005"
+  EMBEDDINGS_SERVICE_URL: "http://embeddings-service:3001"
+  
+  # NeonDB Configuration
+  POSTGRES_HOST: "ep-small-voice-a1o0n6xl-pooler.ap-southeast-1.aws.neon.tech"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DATABASE: "neondb"
+  POSTGRES_USER: "neondb_owner"
+  POSTGRES_SSL: "true"
+  
+  # CORS Configuration
+  CORS_ORIGINS: "http://localhost:3000,http://localhost:8080"
+  
+  # Logging
+  LOG_LEVEL: "INFO"
