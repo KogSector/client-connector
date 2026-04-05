@@ -73,11 +73,6 @@ spec:
             configMapKeyRef:
               name: client-connector-config
               key: DATA_VENT_URL
-        - name: EMBEDDINGS_SERVICE_URL
-          valueFrom:
-            configMapKeyRef:
-              name: client-connector-config
-              key: EMBEDDINGS_SERVICE_URL
         
         # Database Configuration (NeonDB)
         - name: POSTGRES_HOST

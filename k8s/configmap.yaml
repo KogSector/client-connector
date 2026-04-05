@@ -15,9 +15,8 @@ data:
   
   # Service Dependencies
   AUTH_MIDDLEWARE_GRPC_ADDR: "http://auth-middleware:3010"
-  FEATURE_TOGGLE_SERVICE_URL: "http://feature-toggle:3099"
+  FEATURE_TOGGLE_SERVICE_URL: "http://feature-context-toggle:3099"
   DATA_VENT_URL: "http://data-vent:3005"
-  EMBEDDINGS_SERVICE_URL: "http://embeddings-service:3001"
   
   # NeonDB Configuration
   POSTGRES_HOST: "ep-small-voice-a1o0n6xl-pooler.ap-southeast-1.aws.neon.tech"
