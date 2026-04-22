@@ -18,6 +18,8 @@ from app.services import get_mcp_client, shutdown_mcp_client
 from app.services import get_session_manager, shutdown_session_manager
 from app.services.mcp_gateway import MCPGateway
 from app.api import websocket_router
+from app.api.agent_routes import router as agent_router
+from app.infra.db.postgres import init_postgresql, close_postgresql
 
 # Configure structured logging
 structlog.configure(
@@ -59,6 +61,9 @@ async def lifespan(app: FastAPI):
     # Initialize services
     settings = get_settings()
     
+    # Initialize database
+    await init_postgresql()
+    
     # Start MCP client (connects to/spawns mcp-server)
     try:
         mcp_client = await get_mcp_client()
@@ -94,6 +99,7 @@ async def lifespan(app: FastAPI):
         await _mcp_gateway.close()
     await shutdown_mcp_client()
     await shutdown_session_manager()
+    await close_postgresql()
     logger.info("Client Connector stopped")
 
 
@@ -121,6 +127,7 @@ def create_app() -> FastAPI:
     
     # Mount routers
     app.include_router(websocket_router, prefix="/mcp", tags=["MCP"])
+    app.include_router(agent_router)
     
     # Health endpoint
     @app.get("/health")
