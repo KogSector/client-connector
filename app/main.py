@@ -19,6 +19,7 @@ from app.services import get_session_manager, shutdown_session_manager
 from app.services.mcp_gateway import MCPGateway
 from app.api import websocket_router
 from app.api.agent_routes import router as agent_router
+from app.api.mcp_sse import router as mcp_sse_router
 from app.infra.db.postgres import init_postgresql, close_postgresql
 
 # Configure structured logging
@@ -127,6 +128,7 @@ def create_app() -> FastAPI:
     
     # Mount routers
     app.include_router(websocket_router, prefix="/mcp", tags=["MCP"])
+    app.include_router(mcp_sse_router)
     app.include_router(agent_router)
     
     # Health endpoint
