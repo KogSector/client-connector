@@ -51,7 +51,9 @@ async def init_postgresql() -> None:
     _engine = create_async_engine(
         database_url,
         echo=False,
-        connect_args={"ssl": True} if "neon.tech" in database_url else {}
+        connect_args={"ssl": True} if "neon.tech" in database_url else {},
+        pool_pre_ping=True,
+        pool_recycle=300,
     )
     
     _session_factory = async_sessionmaker(
