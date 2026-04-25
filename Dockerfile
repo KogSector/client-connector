@@ -1,6 +1,6 @@
 # =============================================================================
 # Client Connector Service - Dockerfile
-# Port: 3020
+# Port: 8095
 # Role: Gateway for AI agents to connect to ConHub infrastructure
 # =============================================================================
 
@@ -35,14 +35,14 @@ RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
 # Expose port
-EXPOSE 3020
+EXPOSE 8095
 
 # Health check optimized for Azure Container Apps
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:3020/health || exit 1
+    CMD curl -f http://localhost:8095/health || exit 1
 
 # Use dumb-init as PID 1 for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
 
 # Run
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3020"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8095"]
