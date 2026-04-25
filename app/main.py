@@ -86,6 +86,13 @@ async def lifespan(app: FastAPI):
     await _mcp_gateway.initialize()
     logger.info("MCP gateway initialized")
     
+    # --- Kafka Event Producer ---
+    try:
+        from app.infra.events import init_event_producer
+        init_event_producer()
+    except Exception as e:
+        logger.warning("Kafka producer failed to initialize", error=str(e))
+    
     logger.info(
         "Client Connector ready",
         host=settings.host,
@@ -94,6 +101,14 @@ async def lifespan(app: FastAPI):
     
     yield
     
+    # --- Shutdown ---
+    # Shutdown Kafka producer
+    try:
+        from app.infra.events import close_event_producer
+        await close_event_producer()
+    except Exception:
+        pass
+
     # Shutdown
     logger.info("Shutting down Client Connector")
     if _mcp_gateway:

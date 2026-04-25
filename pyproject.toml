@@ -41,6 +41,9 @@ dependencies = [
     
     # Environment
     "python-dotenv>=1.0.0",
+    
+    # Shared Middleware
+    "confuse-common",
 ]
 
 [project.optional-dependencies]

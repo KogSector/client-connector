@@ -67,6 +67,11 @@ class Settings(BaseSettings):
     cors_origins: str = Field(
         alias="CORS_ORIGINS"
     )
+    
+    # Kafka
+    kafka_bootstrap_servers: str = Field(default="localhost:9092", alias="KAFKA_BOOTSTRAP_SERVERS")
+    kafka_client_id: str = Field(default="client-connector", alias="KAFKA_CLIENT_ID")
+    kafka_events_topic: str = Field(default="agent.events", alias="KAFKA_AGENT_EVENTS_TOPIC")
 
     @property
     def cors_origins_list(self) -> list[str]:
