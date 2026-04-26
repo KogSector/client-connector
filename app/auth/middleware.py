@@ -4,10 +4,17 @@ import time
 from typing import Annotated, Any
 from uuid import UUID
 
+import grpc
 import httpx
 import structlog
 from fastapi import Depends, Header, HTTPException, Request, status
 from jose import JWTError, jwt
+
+try:
+    from confuse_common.proto import auth_v1_pb2, auth_v1_pb2_grpc
+except ImportError:
+    auth_v1_pb2 = None
+    auth_v1_pb2_grpc = None
 
 from app.config import Settings, get_settings
 
@@ -98,7 +105,28 @@ async def validate_jwt_token(
     token: str,
     settings: Settings,
 ) -> AuthUser | None:
-    """Validate JWT token and return user info."""
+    """Validate JWT token against auth-middleware service (prefers gRPC)."""
+    # Try gRPC if available
+    if auth_v1_pb2_grpc:
+        try:
+            auth_grpc_url = getattr(settings, "auth_grpc_url", "localhost:50058")
+            async with grpc.aio.insecure_channel(auth_grpc_url) as channel:
+                stub = auth_v1_pb2_grpc.AuthStub(channel)
+                request = auth_v1_pb2.ValidateTokenRequest(token=token)
+                response = await stub.ValidateToken(request, timeout=2.0)
+                
+                if response.valid:
+                    return AuthUser(
+                        user_id=response.user_id,
+                        email=response.email,
+                        roles=list(response.roles),
+                    )
+        except grpc.RpcError as e:
+            logger.warning("Auth gRPC failed for token validation, falling back to local/HTTP", error=str(e))
+        except Exception as e:
+            logger.error("Unexpected gRPC error during token validation", error=str(e))
+
+    # Fallback to local validation
     try:
         payload = jwt.decode(
             token,
@@ -117,7 +145,7 @@ async def validate_jwt_token(
             metadata=payload.get("metadata", {}),
         )
     except JWTError as e:
-        logger.warning("JWT validation failed", error=str(e))
+        logger.warning("JWT validation failed locally", error=str(e))
         return None
 
 
@@ -125,7 +153,29 @@ async def validate_api_key(
     api_key: str,
     settings: Settings,
 ) -> AuthUser | None:
-    """Validate API key against auth-middleware service."""
+    """Validate API key against auth-middleware service (prefers gRPC)."""
+    # Try gRPC if available
+    if auth_v1_pb2_grpc:
+        try:
+            auth_grpc_url = getattr(settings, "auth_grpc_url", "localhost:50058")
+            async with grpc.aio.insecure_channel(auth_grpc_url) as channel:
+                stub = auth_v1_pb2_grpc.AuthStub(channel)
+                request = auth_v1_pb2.ValidateApiKeyRequest(api_key=api_key)
+                response = await stub.ValidateApiKey(request, timeout=2.0)
+                
+                if response.valid:
+                    return AuthUser(
+                        user_id=response.user_id,
+                        email=response.email,
+                        roles=list(response.roles),
+                        api_key_id=response.key_id,
+                    )
+        except grpc.RpcError as e:
+            logger.warning("Auth gRPC failed for API key, falling back to HTTP", error=str(e))
+        except Exception as e:
+            logger.error("Unexpected gRPC error during API key validation", error=str(e))
+
+    # Fallback to HTTP
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
