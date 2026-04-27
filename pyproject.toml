@@ -42,6 +42,10 @@ dependencies = [
     # Environment
     "python-dotenv>=1.0.0",
     
+    # gRPC support
+    "grpcio>=1.60.0",
+    "grpcio-tools>=1.60.0",
+    
     # Shared Middleware
     "confuse-common",
 ]
