@@ -19,6 +19,10 @@ def init_event_producer() -> EventProducer:
         config = KafkaConfig(
             bootstrap_servers=settings.kafka_bootstrap_servers,
             client_id=settings.kafka_client_id,
+            security_protocol=settings.kafka_security_protocol,
+            sasl_mechanism=settings.kafka_sasl_mechanism,
+            sasl_username=settings.kafka_sasl_username,
+            sasl_password=settings.kafka_sasl_password,
         )
         _producer = EventProducer(config=config)
         # Accessing the producer property triggers connection
