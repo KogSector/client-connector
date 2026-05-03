@@ -45,6 +45,7 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE_DIR="$(dirname "$SCRIPT_DIR")"
 K8S_DIR="$SERVICE_DIR/k8s"
+KUBERNETES_DIR="$K8S_DIR"
 
 echo "=== Deploying Client-Connector Service ==="
 echo "Registry: $REGISTRY"
