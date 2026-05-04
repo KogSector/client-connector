@@ -77,6 +77,8 @@ graph TD
     class AM,FT,DV,MCP support
 ```
 
+Note: the client-connector's gRPC helper/server implementations are located in `app/infra/grpc` (previously in a top-level `infra/grpc`).
+
 ## Key Features
 
 ### 1. **MCP Protocol Gateway**

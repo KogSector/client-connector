@@ -173,6 +173,8 @@ async def authenticate_websocket(token: str) -> AuthUser:
     )
 ```
 
+Note: gRPC helper/server code for the client-connector is in `app/infra/grpc` (moved from top-level `infra/grpc`).
+
 ### 4. **Query Processor**
 **Purpose**: Process agent queries and route to knowledge graph
 
