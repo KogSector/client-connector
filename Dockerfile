@@ -1,7 +1,7 @@
 # =============================================================================
 # Client Connector Service - Dockerfile
 # Port: 8095
-# Role: Gateway for AI agents to connect to ConHub infrastructure
+# Role: Gateway for AI agents to connect to ConFuse infrastructure
 # =============================================================================
 
 FROM python:3.14-slim

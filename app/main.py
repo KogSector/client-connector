@@ -125,7 +125,7 @@ def create_app() -> FastAPI:
     
     app = FastAPI(
         title="Client Connector",
-        description="MCP Gateway for AI Agents - Connects agents to ConHub knowledge layer",
+        description="MCP Gateway for AI Agents - Connects agents to ConFuse knowledge layer",
         version="1.0.0",
         lifespan=lifespan,
         docs_url="/docs" if settings.debug else None,

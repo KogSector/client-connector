@@ -90,7 +90,7 @@ class ClientInfo(BaseModel):
 class ServerInfo(BaseModel):
     """Server information returned on initialize."""
 
-    name: str = "ConHub MCP Gateway"
+    name: str = "ConFuse MCP Gateway"
     version: str = "1.0.0"
 
 
