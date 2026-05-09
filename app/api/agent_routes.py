@@ -119,3 +119,20 @@ async def delete_agent(agent_id: str):
         await session.delete(agent)
         await session.commit()
         return {"success": True, "message": "Agent deleted successfully"}
+
+@router.get("/sample/windsurf")
+async def get_windsurf_sample_data():
+    """Get sample data for Windsurf integration testing."""
+    return {
+        "connected": True,
+        "lastSync": "2026-05-08T14:27:00Z",
+        "activeRepos": 3,
+        "totalFiles": 247,
+        "toolsAvailable": [
+            "knowledge_search",
+            "code_context",
+            "semantic_search",
+            "graph_traversal",
+            "entity_extraction"
+        ]
+    }
