@@ -58,7 +58,11 @@ class FeatureToggleClient:
                 )
                 if response.status_code == 200:
                     data = response.json()
-                    enabled = data.get("enabled", default)
+                    enabled = default
+                    if "enabled" in data:
+                        enabled = data["enabled"]
+                    elif isinstance(data.get("data"), dict) and "enabled" in data["data"]:
+                        enabled = data["data"]["enabled"]
                     
                     # Cache the result
                     async with self._lock:
