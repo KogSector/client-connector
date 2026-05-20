@@ -25,7 +25,7 @@ class FeatureToggleClient:
     - ops: Operational toggles
     """
 
-    def __init__(self, base_url: str, cache_ttl: float = 60.0):
+    def __init__(self, base_url: str, cache_ttl: float = 5.0):
         self.base_url = base_url
         self._cache: dict[str, tuple[bool, float]] = {}
         self._cache_ttl = cache_ttl
