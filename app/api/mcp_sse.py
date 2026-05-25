@@ -13,12 +13,12 @@ router = APIRouter(prefix="/mcp", tags=["MCP SSE"])
 _transports = {}
 
 @router.get("/sse")
-async def sse_endpoint(request: Request):
+async def sse_endpoint(request: Request, agent_id: str | None = None):
     """
     Establish an MCP SSE connection.
     """
     mcp_app = get_mcp_app()
-    session_id = str(uuid.uuid4())
+    session_id = agent_id or str(uuid.uuid4())
     
     # Use a clean relative path for the messages endpoint.
     # The session_id will be handled via a query parameter by our POST handler.

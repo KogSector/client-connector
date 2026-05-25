@@ -1,6 +1,5 @@
 """Services module."""
 
-from .mcp_client import McpClient, get_mcp_client, shutdown_mcp_client
 from .toggle_client import FeatureToggleClient, get_toggle_client, is_feature_enabled
 from .session import (
     ClientSession,
@@ -8,11 +7,9 @@ from .session import (
     get_session_manager,
     shutdown_session_manager,
 )
+from .prompt_compressor import PromptCompressor, CompressedQuery
 
 __all__ = [
-    "McpClient",
-    "get_mcp_client",
-    "shutdown_mcp_client",
     "FeatureToggleClient",
     "get_toggle_client",
     "is_feature_enabled",
@@ -20,4 +17,6 @@ __all__ = [
     "SessionManager",
     "get_session_manager",
     "shutdown_session_manager",
+    "PromptCompressor",
+    "CompressedQuery",
 ]

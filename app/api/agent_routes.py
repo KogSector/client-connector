@@ -1,7 +1,7 @@
 import uuid
 import structlog
-from typing import List
-from fastapi import APIRouter, HTTPException, Depends
+from typing import List, Any
+from fastapi import APIRouter, HTTPException, Depends, Request
 from sqlalchemy import select
 
 from app.infra.db.postgres import get_session, Agent
@@ -119,6 +119,36 @@ async def delete_agent(agent_id: str):
         await session.delete(agent)
         await session.commit()
         return {"success": True, "message": "Agent deleted successfully"}
+
+@router.get("/{agent_id}/mcp-config", response_model=dict)
+async def get_mcp_config(agent_id: str, request: Request) -> Any:
+    """Get the JSON-MCP configuration for this agent to copy-paste into IDEs."""
+    logger.info("Getting MCP config", agent_id=agent_id)
+    try:
+        aid = uuid.UUID(agent_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid agent ID format")
+        
+    async with get_session() as session:
+        agent = await session.get(Agent, aid)
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+            
+        # Determine the base URL dynamically from the request or use a default
+        base_url = str(request.base_url).rstrip("/")
+        # Or fall back to localhost if running behind certain proxies without forwarded headers
+        if "localhost" not in base_url and "127.0.0.1" not in base_url:
+            pass # Keep base_url as is, assuming it's correct
+            
+        sse_url = f"{base_url}/mcp/sse?agent_id={agent_id}"
+        
+        return {
+            "mcpServers": {
+                f"confuse-agent-{agent.name.lower().replace(' ', '-')}": {
+                    "url": sse_url
+                }
+            }
+        }
 
 @router.get("/sample/windsurf")
 async def get_windsurf_sample_data():

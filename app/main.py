@@ -1,8 +1,7 @@
-"""Client Connector - MCP Gateway for AI Agents.
+"""Client Connector — MCP endpoint for AI agents.
 
-This service hosts MCP connections from AI agents (Cursor, Claude, etc.)
-and proxies requests to the mcp-server (Rust) which handles the actual
-MCP protocol and connectors.
+Hosts MCP connections from AI agents (Cursor, Claude, Windsurf, etc.)
+and routes knowledge queries to data-vent for FalkorDB retrieval.
 """
 
 from contextlib import asynccontextmanager
@@ -12,12 +11,9 @@ import structlog
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import Settings, get_settings
+from app.config import get_settings
 from app.auth import AuthUser, get_current_user
-from app.services import get_mcp_client, shutdown_mcp_client
 from app.services import get_session_manager, shutdown_session_manager
-from app.services.mcp_gateway import MCPGateway
-from app.api import websocket_router
 from app.api.agent_routes import router as agent_router
 from app.api.mcp_sse import router as mcp_sse_router
 from app.infra.db.postgres import init_postgresql, close_postgresql
@@ -44,76 +40,42 @@ structlog.configure(
 logger = structlog.get_logger()
 
 
-# Global MCP gateway instance
-_mcp_gateway: MCPGateway | None = None
-
-
-async def get_mcp_gateway() -> MCPGateway:
-    """Get the global MCP gateway instance."""
-    return _mcp_gateway
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
-    global _mcp_gateway
     logger.info("Starting Client Connector service")
-    
-    # Initialize services
-    settings = get_settings()
-    
+
     # Initialize database
     await init_postgresql()
-    
-    # Start MCP client (connects to/spawns mcp-server)
-    try:
-        mcp_client = await get_mcp_client()
-        logger.info(
-            "MCP client started",
-            mode=settings.mcp_server_mode,
-            running=mcp_client.is_running,
-        )
-    except Exception as e:
-        logger.error("Failed to start MCP client", error=str(e))
-        # Continue anyway - will fail on first request
-    
+
     # Start session manager
     await get_session_manager()
     logger.info("Session manager started")
-    
-    # Initialize MCP gateway
-    _mcp_gateway = MCPGateway()
-    await _mcp_gateway.initialize()
-    logger.info("MCP gateway initialized")
-    
+
     # --- Kafka Event Producer ---
     try:
         from app.infra.events import init_event_producer
         init_event_producer()
     except Exception as e:
         logger.warning("Kafka producer failed to initialize", error=str(e))
-    
+
+    settings = get_settings()
     logger.info(
         "Client Connector ready",
         host=settings.host,
         port=settings.port,
     )
-    
+
     yield
-    
+
     # --- Shutdown ---
-    # Shutdown Kafka producer
     try:
         from app.infra.events import close_event_producer
         await close_event_producer()
     except Exception:
         pass
 
-    # Shutdown
     logger.info("Shutting down Client Connector")
-    if _mcp_gateway:
-        await _mcp_gateway.close()
-    await shutdown_mcp_client()
     await shutdown_session_manager()
     await close_postgresql()
     logger.info("Client Connector stopped")
@@ -122,16 +84,16 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     settings = get_settings()
-    
+
     app = FastAPI(
         title="Client Connector",
-        description="MCP Gateway for AI Agents - Connects agents to ConFuse knowledge layer",
+        description="MCP endpoint for AI Agents — connects to ConFuse knowledge layer",
         version="1.0.0",
         lifespan=lifespan,
         docs_url="/docs" if settings.debug else None,
         redoc_url="/redoc" if settings.debug else None,
     )
-    
+
     # CORS
     app.add_middleware(
         CORSMiddleware,
@@ -140,30 +102,24 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     # Mount routers
-    app.include_router(websocket_router, prefix="/mcp", tags=["MCP"])
     app.include_router(mcp_sse_router)
     app.include_router(agent_router)
-    
+
     # Health endpoint
     @app.get("/health")
     async def health_check() -> dict[str, Any]:
         """Health check endpoint."""
-        mcp_client = await get_mcp_client()
         session_manager = await get_session_manager()
         stats = await session_manager.get_stats()
-        
+
         return {
             "status": "healthy",
             "service": "client-connector",
-            "mcp_server": {
-                "mode": settings.mcp_server_mode,
-                "running": mcp_client.is_running,
-            },
             "sessions": stats,
         }
-    
+
     # Admin endpoints
     @app.get("/admin/sessions")
     async def list_sessions(
@@ -175,10 +131,10 @@ def create_app() -> FastAPI:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Admin role required",
             )
-        
+
         session_manager = await get_session_manager()
         sessions = await session_manager.list_sessions()
-        
+
         return {
             "sessions": [
                 {
@@ -194,7 +150,7 @@ def create_app() -> FastAPI:
             ],
             "total": len(sessions),
         }
-    
+
     @app.get("/admin/stats")
     async def get_stats(
         user: AuthUser = Depends(get_current_user),
@@ -205,10 +161,10 @@ def create_app() -> FastAPI:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Admin role required",
             )
-        
+
         session_manager = await get_session_manager()
         return await session_manager.get_stats()
-    
+
     return app
 
 
@@ -218,7 +174,7 @@ app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     settings = get_settings()
     uvicorn.run(
         "app.main:app",
