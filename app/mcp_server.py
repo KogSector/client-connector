@@ -21,8 +21,8 @@ logger = structlog.get_logger()
 # Initialize FastMCP server
 mcp = FastMCP("ConFuse Knowledge Search")
 
-# data-vent retrieval service
-DATA_VENT_URL = os.getenv("DATA_VENT_URL", "http://localhost:3005")
+# data-vent retrieval service (configured in .env.map)
+DATA_VENT_URL = os.getenv("DATA_VENT_URL", "http://127.0.0.1:3005")
 SEARCH_TIMEOUT = int(os.getenv("SEARCH_TIMEOUT_SECS", "30"))
 
 # Shared compressor instance
