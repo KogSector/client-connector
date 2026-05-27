@@ -117,6 +117,12 @@ async def health_check() -> dict[str, str]:
         }
 
 
+@mcp.tool()
+async def fetch_test_data() -> str:
+    """Fetch test data to verify connectivity."""
+    return "This is test data from the client-connector."
+
+
 def get_mcp_app() -> FastMCP:
     """Get the configured FastMCP application."""
     return mcp

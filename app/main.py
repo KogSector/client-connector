@@ -15,7 +15,6 @@ from app.config import get_settings
 from app.auth import AuthUser, get_current_user
 from app.services import get_session_manager, shutdown_session_manager
 from app.api.agent_routes import router as agent_router
-from app.api.mcp_sse import router as mcp_sse_router
 from app.infra.db.postgres import init_postgresql, close_postgresql
 
 # Configure structured logging
@@ -104,7 +103,8 @@ def create_app() -> FastAPI:
     )
 
     # Mount routers
-    app.include_router(mcp_sse_router)
+    from app.mcp_server import get_mcp_app
+    app.mount("/mcp", get_mcp_app().sse_app())
     app.include_router(agent_router)
 
     # Health endpoint
