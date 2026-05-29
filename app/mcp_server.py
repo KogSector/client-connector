@@ -30,36 +30,35 @@ _compressor = PromptCompressor()
 
 
 @mcp.tool()
-async def query_knowledge(query: str, limit: int = 10) -> str:
+async def query_knowledge(intent: str, keywords: list[str], limit: int = 10) -> str:
     """Search the ConFuse knowledge base.
 
-    Accepts a natural-language question or keyword query and returns
-    matching knowledge chunks from your organization's code, docs,
-    and internal documents.
+    Extract the core technical intent and keywords from the user's prompt 
+    before querying the knowledge base. Do NOT pass raw natural language.
 
     Args:
-        query: Natural-language search query
-              (e.g., "How does the authentication middleware validate tokens?")
+        intent: A short 1-sentence summary of what the user is trying to find.
+        keywords: A list of 2-5 core technical keywords or entities (e.g., ["authentication", "middleware", "token validation"]).
         limit: Maximum results to return (1-50, default 10)
 
     Returns:
         Compact text with scored results from the knowledge graph.
     """
-    logger.info("query_knowledge_called", query=query, limit=limit)
+    logger.info("query_knowledge_called", intent=intent, keywords=keywords, limit=limit)
 
-    if not query or not query.strip():
-        return "[RESULTS] 0 found\n[ERROR] Query cannot be empty"
+    if not intent or not keywords:
+        return "[RESULTS] 0 found\n[ERROR] Intent and keywords cannot be empty"
 
     limit = max(1, min(limit, 50))
 
-    # Step 1: Compress the natural-language prompt into search keywords
-    compressed = _compressor.compress_query(query)
+    # We now trust the LLM agent to do the summarization and keyword extraction
+    compressed_query = " ".join(keywords)
 
     logger.info(
-        "query_compressed",
-        original=query[:80],
-        compressed=compressed.compressed[:80],
-        keywords=compressed.keywords[:10],
+        "query_extracted",
+        intent=intent,
+        compressed=compressed_query,
+        keywords=keywords,
     )
 
     # Step 2: Forward compressed query to data-vent retrieval pipeline
@@ -68,7 +67,7 @@ async def query_knowledge(query: str, limit: int = 10) -> str:
             response = await client.post(
                 f"{DATA_VENT_URL}/api/v1/retrieve",
                 json={
-                    "query": compressed.compressed,
+                    "query": compressed_query,
                     "limit": limit,
                 },
             )
