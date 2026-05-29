@@ -14,24 +14,7 @@ logger = structlog.get_logger()
 class Base(DeclarativeBase):
     pass
 
-class Agent(Base):
-    """AI Agent connection record."""
-    __tablename__ = "agents"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), nullable=True)
-    name = Column(String(255), nullable=False)
-    provider = Column(String(100), nullable=True)
-    agent_type = Column(String(100), nullable=False)
-    endpoint = Column(String(500), nullable=True)
-    api_key = Column(String(500), nullable=True)
-    permissions = Column(JSONB, default=list)
-    status = Column(String(50), default="Pending")
-    config = Column(JSONB, default=dict)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    last_used = Column(DateTime(timezone=True), nullable=True)
-    usage_stats = Column(JSONB, default=dict)
 
 _engine = None
 _session_factory = None
