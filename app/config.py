@@ -58,10 +58,7 @@ class Settings(BaseSettings):
         alias="DATA_VENT_URL"
     )
 
-    # Feature Toggle
-    feature_toggle_url: str = Field(
-        alias="FEATURE_TOGGLE_SERVICE_URL"
-    )
+
 
     # CORS
     cors_origins: str = Field(

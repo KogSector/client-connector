@@ -1,23 +1,23 @@
 """Feature Toggle client for client-connector.
 
-Integrates with the feature-context-toggle service to check toggle states.
-As per platform rules, features default to disabled when toggle service is unavailable.
+Integrates with the feature-context-toggle service directly via database.
+As per platform rules, features default to disabled when database is unavailable.
 """
 
 import asyncio
 import time
 from typing import Any
-
-import httpx
 import structlog
+from sqlalchemy import text
 
 from app.config import get_settings
+from app.infra.db.postgres import get_session
 
 logger = structlog.get_logger()
 
 
 class FeatureToggleClient:
-    """Client for feature-toggle service with caching.
+    """Client for feature-toggle service with caching from direct DB.
     
     Supports checking toggle states for:
     - devOnly: Developer shortcuts (always disabled in production)
@@ -25,8 +25,7 @@ class FeatureToggleClient:
     - ops: Operational toggles
     """
 
-    def __init__(self, base_url: str, cache_ttl: float = 5.0):
-        self.base_url = base_url
+    def __init__(self, cache_ttl: float = 30.0):
         self._cache: dict[str, tuple[bool, float]] = {}
         self._cache_ttl = cache_ttl
         self._lock = asyncio.Lock()
@@ -36,7 +35,7 @@ class FeatureToggleClient:
         
         Args:
             toggle_name: Name of the toggle (e.g., 'mcpWebsocketTransport')
-            default: Default value if toggle service is unavailable
+            default: Default value if database is unavailable
             
         Returns:
             True if toggle is enabled, False otherwise.
@@ -49,36 +48,33 @@ class FeatureToggleClient:
             if now - cached_at < self._cache_ttl:
                 return enabled
 
-        # Fetch from service
+        # Fetch from database
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    f"{self.base_url}/api/toggles/{toggle_name}",
-                    timeout=5.0,
+            async with get_session() as session:
+                result = await session.execute(
+                    text("SELECT enabled FROM feature_toggles.toggles WHERE name = :name"),
+                    {"name": toggle_name}
                 )
-                if response.status_code == 200:
-                    data = response.json()
-                    enabled = default
-                    if "enabled" in data:
-                        enabled = data["enabled"]
-                    elif isinstance(data.get("data"), dict) and "enabled" in data["data"]:
-                        enabled = data["data"]["enabled"]
+                row = result.fetchone()
+                
+                if row is not None:
+                    enabled = bool(row[0])
                     
                     # Cache the result
                     async with self._lock:
                         self._cache[toggle_name] = (enabled, now)
                     
                     return enabled
-                elif response.status_code == 404:
-                    logger.debug("Toggle not found", toggle=toggle_name)
+                else:
+                    logger.debug("Toggle not found in DB", toggle=toggle_name)
                     return default
                     
-        except httpx.TimeoutException:
-            logger.warning("Feature toggle timeout", toggle=toggle_name)
-        except httpx.ConnectError:
-            logger.warning("Feature toggle service unavailable", toggle=toggle_name)
         except Exception as e:
-            logger.warning("Feature toggle check failed", toggle=toggle_name, error=str(e))
+            logger.warning("Feature toggle check failed (DB error)", toggle=toggle_name, error=str(e))
+            
+            # Fallback to stale cache if available
+            if toggle_name in self._cache:
+                return self._cache[toggle_name][0]
 
         # Default to disabled when service unavailable (per platform rules)
         return default
@@ -91,15 +87,23 @@ class FeatureToggleClient:
             or None if not found.
         """
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    f"{self.base_url}/api/toggles/{toggle_name}",
-                    timeout=5.0,
+            async with get_session() as session:
+                result = await session.execute(
+                    text("SELECT name, enabled, description, category, category_type, metadata FROM feature_toggles.toggles WHERE name = :name"),
+                    {"name": toggle_name}
                 )
-                if response.status_code == 200:
-                    return response.json()
+                row = result.fetchone()
+                if row is not None:
+                    return {
+                        "name": row[0],
+                        "enabled": bool(row[1]),
+                        "description": row[2],
+                        "category": row[3],
+                        "category_type": row[4],
+                        "metadata": row[5]
+                    }
         except Exception as e:
-            logger.warning("Failed to get toggle details", toggle=toggle_name, error=str(e))
+            logger.warning("Failed to get toggle details from DB", toggle=toggle_name, error=str(e))
         return None
 
     def clear_cache(self) -> None:
@@ -115,8 +119,7 @@ async def get_toggle_client() -> FeatureToggleClient:
     """Get or create feature toggle client singleton."""
     global _toggle_client
     if _toggle_client is None:
-        settings = get_settings()
-        _toggle_client = FeatureToggleClient(settings.feature_toggle_url)
+        _toggle_client = FeatureToggleClient()
     return _toggle_client
 
 
