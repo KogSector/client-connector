@@ -11,7 +11,7 @@ import threading
 import time
 
 AGENT_ID = "00000000-0000-0000-0000-000000000000"
-CONFIG_URL = f"http://localhost:8095/api/agents/{AGENT_ID}/mcp-config"
+CONFIG_URL = f"http://localhost:3020/api/agents/{AGENT_ID}/mcp-config"
 
 def test_mcp_compression():
     print("--- Testing MCP Prompt Compressor Flow ---")
@@ -21,17 +21,17 @@ def test_mcp_compression():
         config_resp = requests.get(CONFIG_URL)
         if config_resp.status_code == 404:
             print("Agent not found. Proceeding directly to the SSE URL.")
-            sse_url = f"http://localhost:8095/mcp/sse?agent_id={AGENT_ID}"
+            sse_url = f"http://localhost:3020/api/v1/mcp/sse?agent_id={AGENT_ID}"
         else:
             config_resp.raise_for_status()
             config = config_resp.json()
             print(f"✓ Got Config: {json.dumps(config, indent=2)}")
             servers = config.get("mcpServers", {})
             server_key = list(servers.keys())[0] if servers else None
-            sse_url = servers[server_key]["url"] if server_key else f"http://localhost:8095/mcp/sse?agent_id={AGENT_ID}"
+            sse_url = servers[server_key]["url"] if server_key else f"http://localhost:3020/api/v1/mcp/sse?agent_id={AGENT_ID}"
     except requests.exceptions.RequestException as e:
         print(f"Failed to fetch config: {e}. Using default SSE URL.")
-        sse_url = f"http://localhost:8095/mcp/sse?agent_id={AGENT_ID}"
+        sse_url = f"http://localhost:3020/api/v1/mcp/sse?agent_id={AGENT_ID}"
         
     print(f"\n2. Connecting to SSE endpoint: {sse_url}")
     
@@ -86,7 +86,8 @@ def test_mcp_compression():
             "params": {
                 "name": "query_knowledge",
                 "arguments": {
-                    "query": "Could you please tell me how the authentication middleware validates JWT tokens?",
+                    "intent": "Learn how to use Arena and append nodes in the indextree Rust crate",
+                    "keywords": ["indextree", "Arena", "append", "node"],
                     "limit": 3
                 }
             }
@@ -95,7 +96,29 @@ def test_mcp_compression():
         try:
             post_url = messages_endpoint
             if not post_url.startswith("http"):
-                post_url = f"http://localhost:8095{post_url}"
+                post_url = f"http://localhost:3020{post_url}"
+                
+            # First send initialize
+            init_req = {
+                "jsonrpc": "2.0",
+                "id": str(uuid.uuid4()),
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "test-client", "version": "1.0"}
+                }
+            }
+            requests.post(post_url, json=init_req, headers={"Content-Type": "application/json"})
+            time.sleep(0.5)
+            
+            # Send initialized notification
+            initialized_req = {
+                "jsonrpc": "2.0",
+                "method": "notifications/initialized"
+            }
+            requests.post(post_url, json=initialized_req, headers={"Content-Type": "application/json"})
+            time.sleep(0.5)
                 
             response = requests.post(
                 post_url,

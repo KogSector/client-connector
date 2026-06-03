@@ -19,6 +19,7 @@ from app.infra.db.postgres import init_postgresql, close_postgresql
 # Configure structured logging
 structlog.configure(
     processors=[
+        structlog.contextvars.merge_contextvars,
         structlog.stdlib.filter_by_level,
         structlog.stdlib.add_logger_name,
         structlog.stdlib.add_log_level,
@@ -103,7 +104,8 @@ def create_app() -> FastAPI:
 
     # Mount routers
     from app.mcp_server import get_mcp_app
-    app.mount("/mcp", get_mcp_app().sse_app())
+    # Using a versioned, fixed API endpoint for MCP
+    app.mount("/api/v1/mcp", get_mcp_app().sse_app())
 
     # Health endpoint
     @app.get("/health")

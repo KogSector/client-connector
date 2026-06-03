@@ -8,6 +8,7 @@ before returning it to the agent.
 """
 
 import os
+import uuid
 from typing import Any
 
 import httpx
@@ -44,6 +45,9 @@ async def query_knowledge(intent: str, keywords: list[str], limit: int = 10) -> 
     Returns:
         Compact text with scored results from the knowledge graph.
     """
+    request_id = str(uuid.uuid4())
+    structlog.contextvars.bind_contextvars(request_id=request_id)
+
     logger.info("query_knowledge_called", intent=intent, keywords=keywords, limit=limit)
 
     if not intent or not keywords:
@@ -61,15 +65,19 @@ async def query_knowledge(intent: str, keywords: list[str], limit: int = 10) -> 
         keywords=keywords,
     )
 
+    payload = {
+        "query": compressed_query,
+        "limit": limit,
+    }
+    logger.info("retrieval_request_dispatching", url=f"{DATA_VENT_URL}/api/v1/retrieve", payload=payload)
+
     # Step 2: Forward compressed query to data-vent retrieval pipeline
     try:
         async with httpx.AsyncClient(timeout=SEARCH_TIMEOUT) as client:
             response = await client.post(
                 f"{DATA_VENT_URL}/api/v1/retrieve",
-                json={
-                    "query": compressed_query,
-                    "limit": limit,
-                },
+                headers={"X-Request-ID": request_id},
+                json=payload,
             )
             response.raise_for_status()
             result = response.json()
@@ -78,6 +86,8 @@ async def query_knowledge(intent: str, keywords: list[str], limit: int = 10) -> 
             "retrieval_completed",
             results=result.get("total_results", 0),
             time_ms=result.get("total_time_ms"),
+            unique_sources=result.get("unique_sources", 0),
+            completion_reached=result.get("completion_reached", False),
         )
 
         # Step 3: Compress the response to minimize agent context tokens
