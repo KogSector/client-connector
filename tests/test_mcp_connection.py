@@ -20,8 +20,8 @@ def test_mcp_compression():
     try:
         config_resp = requests.get(CONFIG_URL)
         if config_resp.status_code == 404:
-            print("Agent not found. Cannot proceed with connection.")
-            return
+            print("Agent not found. Proceeding directly to the SSE URL.")
+            sse_url = f"http://localhost:3020/api/v1/mcp/sse?agent_id={AGENT_ID}"
         else:
             config_resp.raise_for_status()
             config = config_resp.json()
@@ -30,8 +30,8 @@ def test_mcp_compression():
             server_key = list(servers.keys())[0] if servers else None
             sse_url = servers[server_key]["url"] if server_key else f"http://localhost:3020/api/v1/mcp/sse?agent_id={AGENT_ID}"
     except requests.exceptions.RequestException as e:
-        print(f"Failed to fetch config: {e}. Cannot proceed.")
-        return
+        print(f"Failed to fetch config: {e}. Using default SSE URL.")
+        sse_url = f"http://localhost:3020/api/v1/mcp/sse?agent_id={AGENT_ID}"
         
     print(f"\n2. Connecting to SSE endpoint: {sse_url}")
     
