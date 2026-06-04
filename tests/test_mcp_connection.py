@@ -20,8 +20,8 @@ def test_mcp_compression():
     try:
         config_resp = requests.get(CONFIG_URL)
         if config_resp.status_code == 404:
-            print("Agent not found. Proceeding directly to the SSE URL.")
-            sse_url = f"http://localhost:3020/api/v1/mcp/sse?agent_id={AGENT_ID}"
+            print("Agent not found. Cannot proceed with connection.")
+            return
         else:
             config_resp.raise_for_status()
             config = config_resp.json()
@@ -30,12 +30,13 @@ def test_mcp_compression():
             server_key = list(servers.keys())[0] if servers else None
             sse_url = servers[server_key]["url"] if server_key else f"http://localhost:3020/api/v1/mcp/sse?agent_id={AGENT_ID}"
     except requests.exceptions.RequestException as e:
-        print(f"Failed to fetch config: {e}. Using default SSE URL.")
-        sse_url = f"http://localhost:3020/api/v1/mcp/sse?agent_id={AGENT_ID}"
+        print(f"Failed to fetch config: {e}. Cannot proceed.")
+        return
         
     print(f"\n2. Connecting to SSE endpoint: {sse_url}")
     
     messages_endpoint = None
+    tool_call_id = str(uuid.uuid4())
     got_endpoint = threading.Event()
     
     def sse_reader():
@@ -54,6 +55,8 @@ def test_mcp_compression():
                         try:
                             data = json.loads(event.data)
                             if "result" in data:
+                                if data.get("id") != tool_call_id:
+                                    continue
                                 print(f"\n✓ Received Tool Result (Compact format expected):")
                                 print("--------------------------------------------------")
                                 if "content" in data["result"]:
@@ -77,17 +80,17 @@ def test_mcp_compression():
     
     if got_endpoint.wait(timeout=10):
         print("\n3. Sending natural language query to `query_knowledge`...")
-        print("   Prompt: 'Could you please tell me how the authentication middleware validates JWT tokens?'")
+        print("   Prompt: 'Can you provide the details of the TOEFL Practice test?'")
         
         tool_call_request = {
             "jsonrpc": "2.0",
-            "id": str(uuid.uuid4()),
+            "id": tool_call_id,
             "method": "tools/call",
             "params": {
                 "name": "query_knowledge",
                 "arguments": {
-                    "intent": "Learn how to use Arena and append nodes in the indextree Rust crate",
-                    "keywords": ["indextree", "Arena", "append", "node"],
+                    "intent": "Get details about the TOEFL Practice test",
+                    "keywords": ["TOEFL", "Practice", "test"],
                     "limit": 3
                 }
             }
@@ -132,7 +135,7 @@ def test_mcp_compression():
             print(f"✗ Tool call request failed: {e}")
             
         # Wait a bit for the SSE stream to receive the response
-        time.sleep(4)
+        time.sleep(15)
     else:
         print("✗ Could not establish proper MCP session (timeout)")
         
