@@ -13,3 +13,4 @@ yarn-error.log
 *.pyc
 __pycache__
 logs/
+.venv
