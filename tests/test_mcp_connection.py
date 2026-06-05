@@ -89,9 +89,8 @@ def test_mcp_compression():
             "params": {
                 "name": "query_knowledge",
                 "arguments": {
-                    "intent": "Get details about the TOEFL Practice test",
-                    "keywords": ["TOEFL", "Practice", "test"],
-                    "limit": 3
+                    "intent": "What are the first three steps recommended when a startup faces a sudden financial crisis?",
+                    "keywords": ["Startup", "Financial", "crisis", "Steps"],
                 }
             }
         }
