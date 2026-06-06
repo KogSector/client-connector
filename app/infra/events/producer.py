@@ -25,6 +25,8 @@ def init_event_producer() -> EventProducer:
             sasl_password=settings.kafka_sasl_password,
         )
         _producer = EventProducer(config=config)
+        # Wait for Kafka to be ready
+        _producer.wait_until_ready()
         # Accessing the producer property triggers connection
         _ = _producer.producer
         logger.info("Kafka event producer initialized", 
