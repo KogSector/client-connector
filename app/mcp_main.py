@@ -23,7 +23,7 @@ def main():
     
     # Configuration
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "8080"))
+    port = int(os.getenv("APP_PORT", "8080"))
     
     logger.info(
         "Starting ConFuse MCP Server",
