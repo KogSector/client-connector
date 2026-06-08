@@ -14,7 +14,7 @@ import structlog
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.confuse_common.proto import auth_v1_pb2, auth_v1_pb2_grpc
+from confuse_common.proto import auth_v1_pb2, auth_v1_pb2_grpc
 
 logger = structlog.get_logger()
 security = HTTPBearer(auto_error=False)
@@ -33,18 +33,6 @@ class AuthenticatedUser:
     def has_role(self, role: str) -> bool:
         return role in self.roles
 
-
-def _demo_user() -> AuthenticatedUser:
-    """Demo user for auth bypass in development."""
-    return AuthenticatedUser(
-        id="demo-user-001",
-        email="demo@confuse.dev",
-        name="Demo User",
-        roles=["user"],
-        workspace_id="demo-workspace-001",
-    )
-
-
 class AuthMiddleware:
     """
     FastAPI dependency that validates authentication.
@@ -61,7 +49,6 @@ class AuthMiddleware:
         self,
         auth_service_url: Optional[str] = None,
         auth_grpc_url: Optional[str] = None,
-        auth_bypass_enabled: Optional[bool] = None,
     ):
         self.auth_service_url = auth_service_url or os.getenv(
             "AUTH_MIDDLEWARE_URL", "http://auth-middleware:3010"
@@ -69,11 +56,6 @@ class AuthMiddleware:
         self.auth_grpc_url = auth_grpc_url or os.getenv(
             "AUTH_GRPC_URL", "localhost:50058"
         )
-        
-        if auth_bypass_enabled is not None:
-            self.auth_bypass_enabled = auth_bypass_enabled
-        else:
-            self.auth_bypass_enabled = os.getenv("AUTH_BYPASS_ENABLED", "false").lower() == "true"
             
         self._client = httpx.AsyncClient(timeout=5.0)
         
@@ -243,9 +225,6 @@ class AuthMiddleware:
         credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     ) -> AuthenticatedUser:
         """Dependency: require authentication (raises 401 if missing)."""
-        if self.auth_bypass_enabled:
-            return _demo_user()
-
         # Try Bearer token
         if credentials and credentials.credentials:
             user = await self._verify_token(credentials.credentials)
@@ -275,9 +254,6 @@ class AuthMiddleware:
         credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     ) -> Optional[AuthenticatedUser]:
         """Dependency: optional authentication (returns None if missing)."""
-        if self.auth_bypass_enabled:
-            return _demo_user()
-
         try:
             if credentials and credentials.credentials:
                 user = await self._verify_token(credentials.credentials)
