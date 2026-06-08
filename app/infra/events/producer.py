@@ -3,7 +3,7 @@ Kafka Event Producer for Client Connector.
 """
 import structlog
 from typing import Optional
-from confuse_common.events import EventProducer, KafkaConfig
+from app.infra.events.common import EventProducer, KafkaConfig
 from app.config import get_settings
 
 logger = structlog.get_logger()

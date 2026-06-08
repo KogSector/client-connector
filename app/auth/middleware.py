@@ -11,7 +11,7 @@ from fastapi import Depends, Header, HTTPException, Request, status
 from jose import JWTError, jwt
 
 try:
-    from confuse_common.proto import auth_v1_pb2, auth_v1_pb2_grpc
+    from app.infra.proto import auth_v1_pb2, auth_v1_pb2_grpc
 except ImportError:
     auth_v1_pb2 = None
     auth_v1_pb2_grpc = None
