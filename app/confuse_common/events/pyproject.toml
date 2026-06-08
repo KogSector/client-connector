@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "confuse-events"
+version = "0.1.0"
+description = "Shared event schemas and Kafka clients for ConFuse platform"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.5.0",
+    "confluent-kafka>=2.3.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
