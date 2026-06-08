@@ -25,7 +25,8 @@ RUN pip install --no-cache-dir \
     "sqlalchemy[asyncio]>=2.0.25" \
     "anyio>=4.2.0" \
     "structlog>=24.1.0" \
-    "python-dotenv>=1.0.0"
+    "python-dotenv>=1.0.0" \
+    "confuse-common @ git+https://github.com/KogSector/confuse-common.git#subdirectory=python"
 
 # Copy source code
 COPY client-connector/app ./app

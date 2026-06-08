@@ -47,7 +47,7 @@ dependencies = [
     "grpcio-tools>=1.60.0",
     
     # Shared Middleware
-    "confuse-common",
+    "confuse-common @ git+https://github.com/KogSector/confuse-common.git#subdirectory=python",
 ]
 
 [project.optional-dependencies]
