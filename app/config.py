@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment."""
 
     model_config = SettingsConfigDict(
-        env_file=(".env.map", ".env.secret"),
+        env_file=("../.env", "../.env.secret"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # Server
     host: str = "0.0.0.0"  # nosec B104 - Intentional for containerized deployment
-    port: int = 8095
+    port: int = Field(default=8095, alias="CLIENT_CONNECTOR_PORT")
     debug: bool = False
 
     # MCP Server
