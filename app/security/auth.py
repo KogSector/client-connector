@@ -14,7 +14,7 @@ import structlog
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from confuse_common.proto import auth_v1_pb2, auth_v1_pb2_grpc
+from ..proto import auth_v1_pb2, auth_v1_pb2_grpc
 
 logger = structlog.get_logger()
 security = HTTPBearer(auto_error=False)
