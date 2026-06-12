@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir \
     "python-dotenv>=1.0.0"
 
 # Copy source code
-COPY client-connector/app ./app
+COPY app ./app
 
 # Create non-root user
 RUN useradd -m appuser && chown -R appuser:appuser /app
@@ -37,12 +37,12 @@ USER appuser
 # Expose port
 EXPOSE 8095
 
-# Health check optimized for Azure Container Apps
+# Health check optimized for Cloud Run
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8095/health || exit 1
+    CMD curl -f http://localhost:${PORT:-8095}/health || exit 1
 
 # Use dumb-init as PID 1 for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
 
 # Run
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8095"]
+CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8095}"
