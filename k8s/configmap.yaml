@@ -15,7 +15,7 @@ data:
   
   # Service Dependencies
   AUTH_MIDDLEWARE_GRPC_ADDR: "http://auth-middleware:3010"
-  FEATURE_TOGGLE_SERVICE_URL: "http://feature-context-toggle:3099"
+  FEATURE_TOGGLE_SERVICE_URL: "http://feature-toggle:3099"
   DATA_VENT_URL: "http://data-vent:3005"
   
   # NeonDB Configuration

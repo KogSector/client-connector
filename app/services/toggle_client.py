@@ -1,6 +1,6 @@
 """Feature Toggle client for client-connector.
 
-Integrates with the feature-context-toggle service directly via database.
+Integrates with the feature-toggle service directly via database.
 As per platform rules, features default to disabled when database is unavailable.
 """
 
