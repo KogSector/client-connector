@@ -34,11 +34,10 @@ _compressor = PromptCompressor()
 async def query_knowledge(intent: str, keywords: list[str], limit: int = 10) -> str:
     """Search the ConFuse knowledge base.
 
-    Extract the core technical intent and keywords from the user's prompt 
-    before querying the knowledge base. Do NOT pass raw natural language.
+    Formulate a practical direct question based on the user's request, and extract core technical keywords before querying the knowledge base.
 
     Args:
-        intent: A short 1-sentence summary of what the user is trying to find.
+        intent: A practical direct question representing what the user is trying to find.
         keywords: A list of 2-5 core technical keywords or entities (e.g., ["authentication", "middleware", "token validation"]).
         limit: Maximum results to return (1-50, default 10)
 
@@ -55,18 +54,15 @@ async def query_knowledge(intent: str, keywords: list[str], limit: int = 10) -> 
 
     limit = max(1, min(limit, 50))
 
-    # We now trust the LLM agent to do the summarization and keyword extraction
-    compressed_query = " ".join(keywords)
-
     logger.info(
         "query_extracted",
         intent=intent,
-        compressed=compressed_query,
         keywords=keywords,
     )
 
     payload = {
-        "query": compressed_query,
+        "intent": intent,
+        "keywords": keywords,
         "limit": limit,
     }
     logger.info("retrieval_request_dispatching", url=f"{DATA_VENT_URL}/api/v1/retrieve", payload=payload)
