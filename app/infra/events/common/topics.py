@@ -28,7 +28,7 @@ class Topics:
 
     # Graphify Episodes (data-connector → graphify-pipeline)
     # Producer: data-connector
-    GRAPHIFY_EPISODES = "graphify.episodes.v1"
+    GRAPHIFY_EPISODES = "graph.episodes"
 
     # Code Processing Topics
     CODE_INGESTED = "code.ingested"
