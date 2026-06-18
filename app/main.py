@@ -51,12 +51,6 @@ async def lifespan(app: FastAPI):
     await get_session_manager()
     logger.info("Session manager started")
 
-    # --- Kafka Event Producer ---
-    try:
-        from app.infra.events import init_event_producer
-        init_event_producer()
-    except Exception as e:
-        logger.warning("Kafka producer failed to initialize", error=str(e))
 
     settings = get_settings()
     logger.info(
@@ -67,12 +61,6 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # --- Shutdown ---
-    try:
-        from app.infra.events import close_event_producer
-        await close_event_producer()
-    except Exception:
-        pass
 
     logger.info("Shutting down Client Connector")
     await shutdown_session_manager()
