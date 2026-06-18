@@ -126,7 +126,7 @@ class SourceSyncRequestedEvent(BaseModel):
 class RepoIngestRequestedEvent(BaseModel):
     """
     Event published when a repository ingestion is requested
-    Topic: repo-events
+    Topic: repo.events
     """
     event_type: str = "REPO_INGEST_REQUESTED"
     event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -154,7 +154,7 @@ class RepoIngestRequestedPayload(BaseModel):
 class RepoUpdatedEvent(BaseModel):
     """
     Event published when a repository is updated (webhook)
-    Topic: repo-events
+    Topic: repo.events
     """
     event_type: str = "REPO_UPDATED"
     event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -182,7 +182,7 @@ class RepoUpdatedPayload(BaseModel):
 class RepoIngestFailedEvent(BaseModel):
     """
     Event published when repository ingestion fails
-    Topic: repo-events
+    Topic: repo.events
     """
     event_type: str = "REPO_INGEST_FAILED"
     event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -207,7 +207,7 @@ class RepoIngestFailedPayload(BaseModel):
 class RepoIngestCompletedEvent(BaseModel):
     """
     Event published when repository ingestion completes successfully
-    Topic: repo-events
+    Topic: repo.events
     """
     event_type: str = "REPO_INGEST_COMPLETED"
     event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
