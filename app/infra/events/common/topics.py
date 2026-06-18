@@ -12,7 +12,7 @@ class Topics:
     # Source Sync Topics (data-connector → unified-processor)
     # Producer: data-connector
     # Consumer: unified-processor
-    SOURCE_SYNC_REQUESTED = "source.sync.requested"
+    SOURCE_SYNC_REQUESTED = "source.sync"
 
     # Chunk Processing Topics (unified-processor → embeddings-service)
     # Producer: unified-processor
