@@ -64,14 +64,6 @@ class Settings(BaseSettings):
         alias="CORS_ORIGINS"
     )
     
-    # Kafka
-    kafka_bootstrap_servers: str = Field(alias="KAFKA_BOOTSTRAP_SERVERS")
-    kafka_client_id: str = Field(alias="KAFKA_CLIENT_ID")
-    kafka_security_protocol: str = Field(alias="KAFKA_SECURITY_PROTOCOL")
-    kafka_sasl_mechanism: str | None = Field(default=None, alias="KAFKA_SASL_MECHANISM")
-    kafka_sasl_username: str | None = Field(default=None, alias="KAFKA_SASL_USERNAME")
-    kafka_sasl_password: str | None = Field(default=None, alias="KAFKA_SASL_PASSWORD")
-    kafka_events_topic: str = Field(alias="KAFKA_AGENT_EVENTS_TOPIC")
 
     @property
     def cors_origins_list(self) -> list[str]:
