@@ -131,3 +131,28 @@ async def fetch_test_data() -> str:
 def get_mcp_app() -> FastMCP:
     """Get the configured FastMCP application."""
     return mcp
+
+
+def main():
+    """Start the FastMCP server."""
+    # Get the configured FastMCP app
+    mcp_app = get_mcp_app()
+    
+    # Configuration
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("APP_PORT", "8080"))
+    
+    logger.info(
+        "Starting ConFuse MCP Server",
+        host=host,
+        port=port,
+        tools=["search_knowledge", "search_knowledge_hybrid", "health_check"],
+    )
+    
+    # Run the FastMCP server
+    # FastMCP handles the MCP protocol over stdio or HTTP
+    mcp_app.run()
+
+
+if __name__ == "__main__":
+    main()
