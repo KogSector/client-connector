@@ -30,6 +30,13 @@ async def init_postgresql() -> None:
         logger.warning("POSTGRES_URL not set, skipping database initialization")
         return
 
+    if database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+    # Remove asyncpg-incompatible query parameters (like sslmode from NeonDB)
+    if "?" in database_url:
+        database_url = database_url.split("?")[0]
+
     # NeonDB requires sslmode=require, asyncpg uses ssl=True
     _engine = create_async_engine(
         database_url,
