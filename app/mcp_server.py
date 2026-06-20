@@ -32,9 +32,12 @@ _compressor = PromptCompressor()
 
 @mcp.tool()
 async def query_knowledge(intent: str, keywords: list[str], limit: int = 10) -> str:
-    """Search the ConFuse knowledge base.
+    """Search the ConFuse knowledge base for repository documentation and codebase context.
 
-    Formulate a practical direct question based on the user's request, and extract core technical keywords before querying the knowledge base.
+    CRITICAL INSTRUCTIONS FOR AGENT:
+    1. Formulate a single, practical, direct question (intent) based on the user's request.
+    2. Extract exactly 2-5 highly specific, core technical keywords or entities. NEVER pass empty strings or generic filler words.
+    3. Do not assume context; pull exact entities mentioned by the user.
 
     Args:
         intent: A practical direct question representing what the user is trying to find.
