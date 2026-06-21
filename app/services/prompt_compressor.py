@@ -193,10 +193,6 @@ class PromptCompressor:
 
         lines.append("")
 
-        # Table header
-        lines.append("SCORE | SOURCE | CONTENT")
-        lines.append("------|--------|--------")
-
         for r in results:
             score = r.get(
                 "final_score",
@@ -210,11 +206,13 @@ class PromptCompressor:
             )
 
             content = r.get("content", r.get("text", ""))
-            # Collapse whitespace, cap length
-            content = re.sub(r"\s+", " ", content).strip()
-            if len(content) > 300:
-                content = content[:297] + "..."
+            
+            # Truncate but preserve formatting to allow AI to reason with code
+            if len(content) > 2000:
+                content = content[:2000] + "\n...[TRUNCATED]"
 
-            lines.append(f"{score_str} | {source} | {content}")
+            lines.append(f"--- SOURCE: {source} | SCORE: {score_str} ---")
+            lines.append(content.strip())
+            lines.append("")
 
         return "\n".join(lines)
