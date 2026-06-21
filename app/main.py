@@ -92,8 +92,17 @@ def create_app() -> FastAPI:
 
     # Mount routers
     from app.mcp_server import get_mcp_app
-    # Using a versioned, fixed API endpoint for MCP
-    app.mount("/api/v1/mcp", get_mcp_app().sse_app())
+    mcp_app = get_mcp_app().sse_app()
+    
+    # We must explicitly add the routes instead of mounting to avoid the 
+    # relative `/messages` path resolution bug in Cursor.
+    for route in mcp_app.routes:
+        if hasattr(route, 'path') and route.path == '/sse':
+            app.add_route("/api/v1/mcp/sse", route.endpoint, methods=["GET"])
+        elif hasattr(route, 'path') and route.path == '/messages':
+            app.add_route("/api/v1/mcp/messages", route.app, methods=["POST"])
+            # Fallback for Cursor which tries to POST to the SSE endpoint
+            app.add_route("/api/v1/mcp/sse", route.app, methods=["POST"])
 
     # Health endpoint
     @app.get("/health")

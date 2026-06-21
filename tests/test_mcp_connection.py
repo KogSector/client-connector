@@ -9,6 +9,11 @@ import sseclient
 import uuid
 import threading
 import time
+import sys
+
+# Force UTF-8 encoding for stdout on Windows to prevent charmap errors
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
 
 AGENT_ID = "00000000-0000-0000-0000-000000000000"
 CONFIG_URL = f"http://localhost:3020/api/agents/{AGENT_ID}/mcp-config"
@@ -25,7 +30,7 @@ def test_mcp_compression():
         else:
             config_resp.raise_for_status()
             config = config_resp.json()
-            print(f"✓ Got Config: {json.dumps(config, indent=2)}")
+            print(f"[OK] Got Config: {json.dumps(config, indent=2)}")
             servers = config.get("mcpServers", {})
             server_key = list(servers.keys())[0] if servers else None
             sse_url = servers[server_key]["url"] if server_key else f"http://localhost:3020/api/v1/mcp/sse?agent_id={AGENT_ID}"
@@ -44,20 +49,22 @@ def test_mcp_compression():
         try:
             response = requests.get(sse_url, stream=True, timeout=30)
             if response.status_code == 200:
-                print("✓ SSE connection established")
+                print("[OK] SSE connection established")
                 client = sseclient.SSEClient(response)
                 for event in client.events():
                     if event.event == 'endpoint':
                         messages_endpoint = event.data
-                        print(f"✓ Received messages endpoint: {messages_endpoint}")
+                        print(f"[OK] Received messages endpoint: {messages_endpoint}")
                         got_endpoint.set()
                     elif event.event == 'message':
+                        print(f"DEBUG SSE: {event.event} - {event.data}")
                         try:
                             data = json.loads(event.data)
                             if "result" in data:
                                 if data.get("id") != tool_call_id:
+                                    print(f"Ignoring result for id {data.get('id')}, expecting {tool_call_id}")
                                     continue
-                                print(f"\n✓ Received Tool Result (Compact format expected):")
+                                print(f"\n[OK] Received Tool Result (Compact format expected):")
                                 print("--------------------------------------------------")
                                 if "content" in data["result"]:
                                     for item in data["result"]["content"]:
@@ -67,11 +74,11 @@ def test_mcp_compression():
                                     print(json.dumps(data["result"], indent=2))
                                 print("--------------------------------------------------")
                             elif "error" in data:
-                                print(f"✗ Tool Error: {data['error']}")
+                                print(f"[FAIL] Tool Error: {data['error']}")
                         except json.JSONDecodeError:
                             print(f"Received non-JSON message: {event.data}")
             else:
-                print(f"✗ SSE connection failed: {response.status_code}")
+                print(f"[FAIL] SSE connection failed: {response.status_code}")
         except Exception as e:
             print(f"SSE stream closed or failed: {e}")
             
@@ -80,7 +87,7 @@ def test_mcp_compression():
     
     if got_endpoint.wait(timeout=10):
         print("\n3. Sending natural language query to `query_knowledge`...")
-        print("   Prompt: 'Can you provide the details of the TOEFL Practice test?'")
+        print("   Prompt: 'How does ReVot understand the uploaded image?'")
         
         tool_call_request = {
             "jsonrpc": "2.0",
@@ -89,8 +96,8 @@ def test_mcp_compression():
             "params": {
                 "name": "query_knowledge",
                 "arguments": {
-                    "intent": "What are the first three steps recommended when a startup faces a sudden financial crisis?",
-                    "keywords": ["Startup", "Financial", "crisis", "Steps"],
+                    "intent": "How does ReVot understand the uploaded image?",
+                    "keywords": ["ReVot", "Image", "Understand"],
                 }
             }
         }
@@ -129,14 +136,14 @@ def test_mcp_compression():
             )
             
             if response.status_code not in (200, 202):
-                print(f"✗ Tool call POST failed: {response.status_code} - {response.text}")
+                print(f"[FAIL] Tool call POST failed: {response.status_code} - {response.text}")
         except Exception as e:
-            print(f"✗ Tool call request failed: {e}")
+            print(f"[FAIL] Tool call request failed: {e}")
             
         # Wait a bit for the SSE stream to receive the response
         time.sleep(15)
     else:
-        print("✗ Could not establish proper MCP session (timeout)")
+        print("[FAIL] Could not establish proper MCP session (timeout)")
         
     print("\nTest completed.")
 
