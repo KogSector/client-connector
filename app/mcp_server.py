@@ -29,6 +29,67 @@ SEARCH_TIMEOUT = int(os.getenv("SEARCH_TIMEOUT_SECS", "30"))
 # Shared compressor instance
 _compressor = PromptCompressor()
 
+# --- MONKEY PATCH FOR ABSOLUTE ENDPOINT URLs ---
+import mcp.server.sse
+from urllib.parse import quote
+from starlette.requests import Request
+import anyio
+from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
+from mcp.types import SessionMessage, ServerMessageMetadata
+import mcp.types as types
+from uuid import uuid4
+import logging
+from sse_starlette.sse import EventSourceResponse
+from typing import Any
+
+original_connect_sse = mcp.server.sse.SseServerTransport.connect_sse
+
+import contextlib
+@contextlib.asynccontextmanager
+async def patched_connect_sse(self, scope, receive, send):
+    request = Request(scope, receive)
+    error_response = await self._security.validate_request(request, is_post=False)
+    if error_response:
+        await error_response(scope, receive, send)
+        raise ValueError("Request validation failed")
+
+    read_stream_writer, read_stream = anyio.create_memory_object_stream(0)
+    write_stream, write_stream_reader = anyio.create_memory_object_stream(0)
+
+    session_id = uuid4()
+    self._read_stream_writers[session_id] = read_stream_writer
+
+    # Construct absolute URL!
+    base_url = str(request.base_url).rstrip("/")
+    # self._endpoint is e.g. "/messages/"
+    full_message_path = base_url + self._endpoint
+    client_post_uri_data = f"{full_message_path}?session_id={session_id.hex}"
+
+    sse_stream_writer, sse_stream_reader = anyio.create_memory_object_stream(0)
+
+    async def sse_writer():
+        async with sse_stream_writer, write_stream_reader:
+            await sse_stream_writer.send({"event": "endpoint", "data": client_post_uri_data})
+            async for session_message in write_stream_reader:
+                await sse_stream_writer.send(
+                    {
+                        "event": "message",
+                        "data": session_message.message.model_dump_json(by_alias=True, exclude_none=True),
+                    }
+                )
+
+    async with anyio.create_task_group() as tg:
+        async def response_wrapper(scope, receive, send):
+            await EventSourceResponse(content=sse_stream_reader, data_sender_callable=sse_writer)(scope, receive, send)
+            await read_stream_writer.aclose()
+            await write_stream_reader.aclose()
+
+        tg.start_soon(response_wrapper, scope, receive, send)
+        yield (read_stream, write_stream)
+
+mcp.server.sse.SseServerTransport.connect_sse = patched_connect_sse
+# --- END MONKEY PATCH ---
+
 
 @mcp.tool()
 async def query_knowledge(intent: str, keywords: list[str], limit: int = 10) -> str:
@@ -40,6 +101,8 @@ async def query_knowledge(intent: str, keywords: list[str], limit: int = 10) -> 
     2. Formulate a single, practical, direct question (intent) based on the user's request.
     3. Extract exactly 2-5 highly specific, core technical keywords or entities. NEVER pass empty strings or generic filler words.
     4. Do not assume context; pull exact entities mentioned by the user.
+    5. EXPECT CODE, NOT PROSE: The knowledge graph often contains raw codebase nodes (`Vector_Chunk`, `Code_Entity`) with no comments. A natural language query may yield raw code. You must proactively translate user intent into structural queries to fetch the raw code.
+    6. MANDATORY CLARIFICATION: If the retrieved code is insufficient to understand the context, or if the search yields zero results, DO NOT assume the feature doesn't exist or guess the answer. You MUST stop and query the knowledge layer (e.g., entry points, variable names) until the codebase is fully understood. Reason over the code to understand meaning and context.
 
     Args:
         intent: A practical direct question representing what the user is trying to find.
