@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     # MCP Server
     mcp_server_path: str | None = Field(default=None, alias="MCP_SERVER_PATH")
     mcp_server_mode: Literal["subprocess", "http"] = Field(alias="MCP_SERVER_MODE", default="http")
-    mcp_server_url: str = Field(alias="MCP_SERVER_URL")
+    mcp_server_url: str = Field(alias="MCP_SERVER_URL", default="http://localhost:3005")
 
     # Authentication
     auth_middleware_url: str = Field(
