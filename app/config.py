@@ -18,13 +18,13 @@ class Settings(BaseSettings):
     )
 
     # Server
-    host: str
-    port: int = Field(alias="CLIENT_CONNECTOR_PORT")
-    debug: bool
+    host: str = Field(default="0.0.0.0")
+    port: int = Field(alias="CLIENT_CONNECTOR_PORT", default=3020)
+    debug: bool = Field(default=False)
 
     # MCP Server
     mcp_server_path: str | None = Field(default=None, alias="MCP_SERVER_PATH")
-    mcp_server_mode: Literal["subprocess", "http"] = Field(alias="MCP_SERVER_MODE")
+    mcp_server_mode: Literal["subprocess", "http"] = Field(alias="MCP_SERVER_MODE", default="http")
     mcp_server_url: str = Field(alias="MCP_SERVER_URL")
 
     # Authentication
@@ -32,8 +32,8 @@ class Settings(BaseSettings):
         alias="AUTH_MIDDLEWARE_URL"
     )
     jwt_secret: str = Field(alias="JWT_SECRET")
-    jwt_algorithm: str
-    api_key_header: str
+    jwt_algorithm: str = Field(default="HS256")
+    api_key_header: str = Field(default="X-API-Key")
 
     # Database
     database_url: str = Field(
@@ -41,16 +41,16 @@ class Settings(BaseSettings):
     )
 
     # Rate Limiting
-    rate_limit_per_minute: int
-    rate_limit_burst: int
+    rate_limit_per_minute: int = Field(default=60)
+    rate_limit_burst: int = Field(default=10)
 
     # Session
-    session_timeout_minutes: int
-    max_concurrent_clients: int
+    session_timeout_minutes: int = Field(default=60)
+    max_concurrent_clients: int = Field(default=100)
 
     # Logging
-    log_level: str
-    log_format: Literal["json", "console"]
+    log_level: str = Field(default="info")
+    log_format: Literal["json", "console"] = Field(default="console")
 
     # Downstream Services (for MCP gateway operations)
     data_vent_url: str = Field(
