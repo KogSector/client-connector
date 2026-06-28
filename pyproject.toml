@@ -21,8 +21,6 @@ dependencies = [
     # HTTP client
     "httpx>=0.28.1",
     
-    # Authentication
-    "python-jose[cryptography]>=3.5.0",
     "passlib[bcrypt]>=1.7.4",
     
     # Data validation

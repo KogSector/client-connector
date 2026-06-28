@@ -31,8 +31,6 @@ class Settings(BaseSettings):
     auth_middleware_url: str = Field(
         alias="AUTH_MIDDLEWARE_URL"
     )
-    jwt_secret: str = Field(alias="JWT_SECRET")
-    jwt_algorithm: str = Field(default="HS256")
     api_key_header: str = Field(default="X-API-Key")
 
     # Database

@@ -8,7 +8,7 @@ import grpc
 import httpx
 import structlog
 from fastapi import Depends, Header, HTTPException, Request, status
-from jose import JWTError, jwt
+
 
 try:
     from app.proto import auth_v1_pb2, auth_v1_pb2_grpc
@@ -126,28 +126,7 @@ async def validate_jwt_token(
         except Exception as e:
             logger.error("Unexpected gRPC error during token validation", error=str(e))
 
-    # Fallback to local validation
-    try:
-        payload = jwt.decode(
-            token,
-            settings.jwt_secret,
-            algorithms=[settings.jwt_algorithm],
-        )
-        
-        user_id = payload.get("sub")
-        if not user_id:
-            return None
-
-        return AuthUser(
-            user_id=user_id,
-            email=payload.get("email"),
-            roles=payload.get("roles", []),
-            metadata=payload.get("metadata", {}),
-        )
-    except JWTError as e:
-        logger.warning("JWT validation failed locally", error=str(e))
-        return None
-
+    return None
 
 async def validate_api_key(
     api_key: str,
