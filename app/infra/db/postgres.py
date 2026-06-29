@@ -1,31 +1,27 @@
-import uuid
 import structlog
-from datetime import datetime
-from sqlalchemy import Column, String, DateTime, JSON, text
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.sql import func
 
 from app.config import get_settings
 
 logger = structlog.get_logger()
 
+
 class Base(DeclarativeBase):
     pass
-
 
 
 _engine = None
 _session_factory = None
 
+
 async def init_postgresql() -> None:
     """Initialize PostgreSQL connection and create tables with retry logic."""
     global _engine, _session_factory
-    
+
     settings = get_settings()
     database_url = settings.database_url
-    
+
     if not database_url:
         logger.warning("POSTGRES_URL not set, skipping database initialization")
         return
@@ -45,13 +41,9 @@ async def init_postgresql() -> None:
         pool_pre_ping=True,
         pool_recycle=300,
     )
-    
-    _session_factory = async_sessionmaker(
-        _engine,
-        class_=AsyncSession,
-        expire_on_commit=False
-    )
-    
+
+    _session_factory = async_sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
+
     # Create tables with retries for cold start / availability
     max_retries = 5
     retry_delay = 2
@@ -67,13 +59,16 @@ async def init_postgresql() -> None:
                     "Database initialization failed, retrying...",
                     attempt=attempt + 1,
                     error=str(e),
-                    next_retry_in=retry_delay
+                    next_retry_in=retry_delay,
                 )
                 import asyncio
+
                 await asyncio.sleep(retry_delay)
                 retry_delay *= 2
             else:
-                logger.error("Failed to initialize PostgreSQL after multiple attempts", error=str(e))
+                logger.error(
+                    "Failed to initialize PostgreSQL after multiple attempts", error=str(e)
+                )
                 # Don't raise here, allow the app to start but API calls will fail
                 # This prevents the whole service from crashing immediately if DB is down
 
@@ -84,6 +79,7 @@ async def close_postgresql() -> None:
     if _engine:
         await _engine.dispose()
         _engine = None
+
 
 def get_session() -> AsyncSession:
     """Get a database session."""

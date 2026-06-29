@@ -2,13 +2,11 @@
 
 import time
 from typing import Annotated, Any
-from uuid import UUID
 
 import grpc
 import httpx
 import structlog
 from fastapi import Depends, Header, HTTPException, Request, status
-
 
 try:
     from app.proto import auth_v1_pb2, auth_v1_pb2_grpc
@@ -77,10 +75,10 @@ class RateLimiter:
         """Get remaining requests for the key."""
         now = time.time()
         window_start = now - 60
-        
+
         if key not in self._requests:
             return self.limit_per_minute
-            
+
         recent = [t for t in self._requests[key] if t > window_start]
         return max(0, self.limit_per_minute - len(recent))
 
@@ -114,7 +112,7 @@ async def validate_jwt_token(
                 stub = auth_v1_pb2_grpc.AuthStub(channel)
                 request = auth_v1_pb2.ValidateTokenRequest(token=token)
                 response = await stub.ValidateToken(request, timeout=2.0)
-                
+
                 if response.valid:
                     return AuthUser(
                         user_id=response.user_id,
@@ -122,11 +120,14 @@ async def validate_jwt_token(
                         roles=list(response.roles),
                     )
         except grpc.RpcError as e:
-            logger.warning("Auth gRPC failed for token validation, falling back to local/HTTP", error=str(e))
+            logger.warning(
+                "Auth gRPC failed for token validation, falling back to local/HTTP", error=str(e)
+            )
         except Exception as e:
             logger.error("Unexpected gRPC error during token validation", error=str(e))
 
     return None
+
 
 async def validate_api_key(
     api_key: str,
@@ -141,7 +142,7 @@ async def validate_api_key(
                 stub = auth_v1_pb2_grpc.AuthStub(channel)
                 request = auth_v1_pb2.ValidateApiKeyRequest(api_key=api_key)
                 response = await stub.ValidateApiKey(request, timeout=2.0)
-                
+
                 if response.valid:
                     return AuthUser(
                         user_id=response.user_id,
@@ -162,7 +163,7 @@ async def validate_api_key(
                 json={"api_key": api_key},
                 timeout=10.0,
             )
-            
+
             if response.status_code == 200:
                 data = response.json()
                 return AuthUser(
@@ -173,7 +174,7 @@ async def validate_api_key(
                 )
     except Exception as e:
         logger.error("API key validation failed", error=str(e))
-    
+
     return None
 
 
@@ -184,11 +185,11 @@ async def get_current_user(
     settings: Settings = Depends(get_settings),
 ) -> AuthUser:
     """FastAPI dependency for authenticated user."""
-    
+
     # Check rate limit first
     client_ip = request.client.host if request.client else "unknown"
     rate_limiter = get_rate_limiter()
-    
+
     if not rate_limiter.is_allowed(client_ip):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,

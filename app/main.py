@@ -11,10 +11,10 @@ import structlog
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import get_settings
 from app.auth import AuthUser, get_current_user
+from app.config import get_settings
+from app.infra.db.postgres import close_postgresql, init_postgresql
 from app.services import get_session_manager, shutdown_session_manager
-from app.infra.db.postgres import init_postgresql, close_postgresql
 
 # Configure structured logging
 structlog.configure(
@@ -51,7 +51,6 @@ async def lifespan(app: FastAPI):
     await get_session_manager()
     logger.info("Session manager started")
 
-
     settings = get_settings()
     logger.info(
         "Client Connector ready",
@@ -60,7 +59,6 @@ async def lifespan(app: FastAPI):
     )
 
     yield
-
 
     logger.info("Shutting down Client Connector")
     await shutdown_session_manager()
@@ -92,6 +90,7 @@ def create_app() -> FastAPI:
 
     # Mount routers
     from app.mcp_server import get_mcp_app
+
     # Using a versioned, fixed API endpoint for MCP
     app.mount("/api/v1/mcp", get_mcp_app().sse_app())
 

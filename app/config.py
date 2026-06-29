@@ -28,15 +28,11 @@ class Settings(BaseSettings):
     mcp_server_url: str = Field(alias="MCP_SERVER_URL", default="http://localhost:3005")
 
     # Authentication
-    auth_middleware_url: str = Field(
-        alias="AUTH_MIDDLEWARE_URL"
-    )
+    auth_middleware_url: str = Field(alias="AUTH_MIDDLEWARE_URL")
     api_key_header: str = Field(default="X-API-Key")
 
     # Database
-    database_url: str = Field(
-        alias="POSTGRES_URL"
-    )
+    database_url: str = Field(alias="POSTGRES_URL")
 
     # Rate Limiting
     rate_limit_per_minute: int = Field(default=60)
@@ -51,17 +47,10 @@ class Settings(BaseSettings):
     log_format: Literal["json", "console"] = Field(default="console")
 
     # Downstream Services (for MCP gateway operations)
-    data_vent_url: str = Field(
-        alias="DATA_VENT_URL"
-    )
-
-
+    data_vent_url: str = Field(alias="DATA_VENT_URL")
 
     # CORS
-    cors_origins: str = Field(
-        alias="CORS_ORIGINS"
-    )
-    
+    cors_origins: str = Field(alias="CORS_ORIGINS")
 
     @property
     def cors_origins_list(self) -> list[str]:

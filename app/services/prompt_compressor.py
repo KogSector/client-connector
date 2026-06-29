@@ -14,9 +14,10 @@ Sits between AI agents and data-vent. Two jobs:
 
 import re
 import time
-import structlog
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
+
+import structlog
 
 logger = structlog.get_logger()
 
@@ -27,42 +28,153 @@ logger = structlog.get_logger()
 
 FILLER_WORDS: set[str] = {
     # Conversational
-    "please", "could", "would", "should", "can", "help", "me",
-    "find", "show", "tell", "give", "get", "look", "let",
-    "know", "need", "want", "like", "think", "try",
+    "please",
+    "could",
+    "would",
+    "should",
+    "can",
+    "help",
+    "me",
+    "find",
+    "show",
+    "tell",
+    "give",
+    "get",
+    "look",
+    "let",
+    "know",
+    "need",
+    "want",
+    "like",
+    "think",
+    "try",
     # Articles & determiners
-    "a", "an", "the", "this", "that", "these", "those",
+    "a",
+    "an",
+    "the",
+    "this",
+    "that",
+    "these",
+    "those",
     # Pronouns
-    "i", "my", "we", "our", "you", "your", "it", "its",
-    "he", "his", "she", "her", "they", "them", "their",
+    "i",
+    "my",
+    "we",
+    "our",
+    "you",
+    "your",
+    "it",
+    "its",
+    "he",
+    "his",
+    "she",
+    "her",
+    "they",
+    "them",
+    "their",
     # Prepositions
-    "in", "on", "at", "to", "for", "of", "with", "by", "from",
-    "into", "about", "between", "through", "during", "before",
-    "after", "above", "below", "up", "down", "out", "off",
-    "over", "under",
+    "in",
+    "on",
+    "at",
+    "to",
+    "for",
+    "of",
+    "with",
+    "by",
+    "from",
+    "into",
+    "about",
+    "between",
+    "through",
+    "during",
+    "before",
+    "after",
+    "above",
+    "below",
+    "up",
+    "down",
+    "out",
+    "off",
+    "over",
+    "under",
     # Conjunctions
-    "and", "or", "but", "nor", "so", "yet", "both",
+    "and",
+    "or",
+    "but",
+    "nor",
+    "so",
+    "yet",
+    "both",
     # Aux verbs
-    "is", "am", "are", "was", "were", "be", "been", "being",
-    "has", "have", "had", "do", "does", "did", "will",
+    "is",
+    "am",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+    "has",
+    "have",
+    "had",
+    "do",
+    "does",
+    "did",
+    "will",
     # Query filler
-    "what", "how", "where", "when", "why", "which", "who",
-    "all", "any", "some", "each", "every", "no", "not",
-    "just", "only", "also", "very", "really", "quite",
-    "more", "most", "much", "many", "few", "less", "least",
-    "then", "than", "too", "here", "there", "now",
+    "what",
+    "how",
+    "where",
+    "when",
+    "why",
+    "which",
+    "who",
+    "all",
+    "any",
+    "some",
+    "each",
+    "every",
+    "no",
+    "not",
+    "just",
+    "only",
+    "also",
+    "very",
+    "really",
+    "quite",
+    "more",
+    "most",
+    "much",
+    "many",
+    "few",
+    "less",
+    "least",
+    "then",
+    "than",
+    "too",
+    "here",
+    "there",
+    "now",
     # Misc
-    "information", "details", "data", "stuff", "things",
-    "regarding", "related", "about", "concerning",
+    "information",
+    "details",
+    "data",
+    "stuff",
+    "things",
+    "regarding",
+    "related",
+    "about",
+    "concerning",
 }
 
 
 @dataclass
 class CompressedQuery:
     """Result of query compression."""
+
     original: str
-    compressed: str        # Clean keyword string for data-vent
-    keywords: list[str]    # Individual extracted keywords
+    compressed: str  # Clean keyword string for data-vent
+    keywords: list[str]  # Individual extracted keywords
     compression_ms: float = 0.0
 
 
@@ -129,10 +241,7 @@ class PromptCompressor:
 
         # 4. Normalize and strip filler
         words = re.sub(r"[^\w\s]", " ", remaining.lower()).split()
-        keywords = [
-            w for w in words
-            if w not in self.filler_words and len(w) >= 2
-        ]
+        keywords = [w for w in words if w not in self.filler_words and len(w) >= 2]
 
         # 5. Combine: identifiers first (highest value), then keywords
         all_keywords: list[str] = []
@@ -201,7 +310,7 @@ class PromptCompressor:
             if node_type and node_id:
                 # TOON Serialization for Graph Nodes
                 props = r.get("properties", r.get("metadata", {}))
-                
+
                 # Extract score if available
                 score = r.get("final_score", r.get("similarity_score", r.get("score")))
                 if score is not None:
@@ -209,10 +318,11 @@ class PromptCompressor:
 
                 # Format properties as concise key=value pairs
                 props_str = ", ".join(
-                    f"{k}={v}" for k, v in props.items() 
+                    f"{k}={v}"
+                    for k, v in props.items()
                     if k not in ["content", "text", "relationships", "edges"]
                 )
-                
+
                 if props_str:
                     lines.append(f"Node | {node_type}:{node_id} | {props_str}")
                 else:
@@ -231,7 +341,7 @@ class PromptCompressor:
                     if len(content) > 2000:
                         content = content[:2000] + "\n...[TRUNCATED]"
                     lines.append(content.strip())
-                
+
                 lines.append("")
                 continue
 
@@ -239,13 +349,13 @@ class PromptCompressor:
             score = r.get("final_score", r.get("similarity_score", r.get("score", 0.0)))
             score_str = f"{score:.3f}" if isinstance(score, float) else str(score)
             source = r.get("source_id", r.get("source", r.get("document_id", "-")))
-            
+
             lines.append(f"Chunk | {source} | score={score_str}")
-            
+
             content = r.get("content", r.get("text", ""))
             if len(content) > 2000:
                 content = content[:2000] + "\n...[TRUNCATED]"
-            
+
             lines.append(content.strip())
             lines.append("")
 
@@ -256,21 +366,21 @@ class PromptCompressor:
         Convert data-vent RetrieveBatchResponse JSON into compact tabular text for multiple queries.
         """
         lines: list[str] = []
-        
+
         total_time = batch_data.get("total_batch_time_ms")
         if total_time is not None:
             lines.append(f"[BATCH TIME] {total_time:.0f}ms")
             lines.append("")
 
         responses = batch_data.get("responses", [])
-        
+
         for idx, (query, resp) in enumerate(zip(queries, responses)):
             intent = query.get("intent", "Unknown Query")
-            lines.append(f"=== RESULTS FOR: \"{intent}\" ===")
-            
+            lines.append(f'=== RESULTS FOR: "{intent}" ===')
+
             # Use the existing compress_response logic for each individual response
             compressed = self.compress_response(resp)
             lines.append(compressed)
             lines.append("")
-            
+
         return "\n".join(lines)

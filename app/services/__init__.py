@@ -1,13 +1,13 @@
 """Services module."""
 
-from .toggle_client import FeatureToggleClient, get_toggle_client, is_feature_enabled
+from .prompt_compressor import CompressedQuery, PromptCompressor
 from .session import (
     ClientSession,
     SessionManager,
     get_session_manager,
     shutdown_session_manager,
 )
-from .prompt_compressor import PromptCompressor, CompressedQuery
+from .toggle_client import FeatureToggleClient, get_toggle_client, is_feature_enabled
 
 __all__ = [
     "FeatureToggleClient",

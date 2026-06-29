@@ -92,7 +92,7 @@ class SessionManager:
                 tenant_id=tenant_id,
             )
             self._sessions[session.id] = session
-            
+
             logger.info(
                 "Session created",
                 session_id=str(session.id),

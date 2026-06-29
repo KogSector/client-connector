@@ -97,7 +97,9 @@ class ServerInfo(BaseModel):
 class Capabilities(BaseModel):
     """MCP capabilities."""
 
-    resources: dict[str, bool] = Field(default_factory=lambda: {"subscribe": False, "listChanged": False})
+    resources: dict[str, bool] = Field(
+        default_factory=lambda: {"subscribe": False, "listChanged": False}
+    )
     tools: dict[str, bool] = Field(default_factory=lambda: {"listChanged": False})
     prompts: dict[str, bool] = Field(default_factory=lambda: {"listChanged": False})
     logging: dict[str, Any] = Field(default_factory=dict)
