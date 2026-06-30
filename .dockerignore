@@ -1,15 +1,7 @@
 # Node Service .dockerignore
-# Ignore everything by default
-**
-
-# Allow build context essentials
-!client-connector/
-!shared/
-
-# Specific ignores
-client-connector/node_modules
-client-connector/dist
-client-connector/.env
-client-connector/coverage
-shared/node_modules
-shared/dist
+node_modules/
+dist/
+.env
+.env.*
+coverage/
+.git/
