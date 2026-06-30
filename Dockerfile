@@ -26,12 +26,15 @@ RUN pip install --no-cache-dir \
     "structlog>=24.1.0" \
     "python-dotenv>=1.0.0"
 
-# Copy source code
-COPY app ./app
+# Copy source code with strict ownership
+COPY --chown=appuser:appuser app ./app
 
 # Create non-root user
 RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
+
+# Set explicitly for Render fallbacks
+ENV PORT=8095
 
 # Expose port
 EXPOSE 8095
