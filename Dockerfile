@@ -18,19 +18,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-RUN pip install --no-cache-dir \
-    "fastapi>=0.109.0" \
-    "uvicorn[standard]>=0.27.0" \
-    "websockets>=12.0" \
-    "httpx>=0.26.0" \
-    "passlib[bcrypt]>=1.7.4" \
-    "pydantic>=2.5.0" \
-    "pydantic-settings>=2.1.0" \
-    "asyncpg>=0.29.0" \
-    "sqlalchemy[asyncio]>=2.0.25" \
-    "anyio>=4.2.0" \
-    "structlog>=24.1.0" \
-    "python-dotenv>=1.0.0"
+COPY pyproject.toml README.md ./
+RUN mkdir -p app && touch app/__init__.py
+RUN pip install --no-cache-dir .
 
 # Stage 2: Runtime
 FROM python:3.12-slim AS runtime
