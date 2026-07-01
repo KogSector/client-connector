@@ -69,17 +69,18 @@ async def patched_connect_sse(self, scope, receive, send):
     sse_stream_writer, sse_stream_reader = anyio.create_memory_object_stream(0)
 
     async def sse_writer():
-        async with sse_stream_writer, write_stream_reader:
-            await sse_stream_writer.send({"event": "endpoint", "data": client_post_uri_data})
-            async for session_message in write_stream_reader:
-                await sse_stream_writer.send(
-                    {
-                        "event": "message",
-                        "data": session_message.message.model_dump_json(
-                            by_alias=True, exclude_none=True
-                        ),
-                    }
-                )
+        with anyio.move_on_after(270):
+            async with sse_stream_writer, write_stream_reader:
+                await sse_stream_writer.send({"event": "endpoint", "data": client_post_uri_data})
+                async for session_message in write_stream_reader:
+                    await sse_stream_writer.send(
+                        {
+                            "event": "message",
+                            "data": session_message.message.model_dump_json(
+                                by_alias=True, exclude_none=True
+                            ),
+                        }
+                    )
 
     async with anyio.create_task_group() as tg:
 
