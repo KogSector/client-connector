@@ -94,6 +94,12 @@ def create_app() -> FastAPI:
     # Using a versioned, fixed API endpoint for MCP
     app.mount("/api/v1/mcp", get_mcp_app().sse_app())
 
+    # Root endpoint for UptimeRobot
+    @app.api_route("/", methods=["GET", "HEAD"])
+    async def root_check() -> dict[str, str]:
+        """Root endpoint for basic health monitoring."""
+        return {"status": "ok"}
+
     # Health endpoint
     @app.get("/health")
     async def health_check() -> dict[str, Any]:
