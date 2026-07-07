@@ -6,10 +6,12 @@ and routes knowledge queries to data-vent for FalkorDB retrieval.
 
 from contextlib import asynccontextmanager
 from typing import Any
+from uuid import uuid4
 
 import structlog
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.auth import AuthUser, get_current_user
 from app.config import get_settings
@@ -66,6 +68,20 @@ async def lifespan(app: FastAPI):
     logger.info("Client Connector stopped")
 
 
+class CorrelationIdMiddleware(BaseHTTPMiddleware):
+    """Middleware to extract or generate a correlation ID and bind it to structlog."""
+    async def dispatch(self, request: Request, call_next):
+        correlation_id = request.headers.get("X-Correlation-ID") or str(uuid4())
+        
+        # Bind it to structlog's thread-local/async context
+        structlog.contextvars.clear_contextvars()
+        structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
+        
+        response = await call_next(request)
+        response.headers["X-Correlation-ID"] = correlation_id
+        return response
+
+
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     settings = get_settings()
@@ -87,6 +103,9 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Correlation ID
+    app.add_middleware(CorrelationIdMiddleware)
 
     # Mount routers
     from app.mcp_server import get_mcp_app
