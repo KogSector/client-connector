@@ -176,12 +176,16 @@ async def fetch_workspace_and_project_files(queries: list[dict], limit: int = 10
 
     limit = max(1, min(limit, 50))
 
+    falkordb_graph_name = os.getenv("FALKORDB_GRAPH_NAME")
     requests_payload = []
     for q in queries:
         intent = q.get("intent", "")
         keywords = q.get("keywords", [])
         if intent and keywords:
-            requests_payload.append({"intent": intent, "keywords": keywords, "limit": limit})
+            req_dict = {"intent": intent, "keywords": keywords, "limit": limit}
+            if falkordb_graph_name:
+                req_dict["falkordb_graph_name"] = falkordb_graph_name
+            requests_payload.append(req_dict)
 
     if not requests_payload:
         return "[RESULTS] 0 found\n[ERROR] All queries were invalid or missing intent/keywords."
