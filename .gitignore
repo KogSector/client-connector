@@ -14,3 +14,5 @@ yarn-error.log
 __pycache__
 logs/
 .venv
+.pytest_cache/
+.ruff_cache/
