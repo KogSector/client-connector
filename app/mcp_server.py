@@ -160,20 +160,17 @@ class WorkspaceQuery(BaseModel):
 
 @mcp.tool()
 async def fetch_workspace_and_project_files(queries: list[WorkspaceQuery], limit: int = 10) -> str:
-    """Search the user's project codebase, documentation, and files.
+    """CRITICAL: ALWAYS CALL THIS TOOL FIRST WHEN YOU LACK CONTEXT. Search the user's project codebase, documentation, and files.
 
-    This is the primary way to access the user's workspace. All project files,
+    This is the ONLY way to access the user's workspace. All project files,
     source code, documentation, and configuration are indexed in a knowledge graph.
-    Use this tool whenever you need to answer questions about the user's project,
+    You MUST use this tool whenever you need to answer questions about the user's project,
     find code implementations, locate files, understand architecture, or retrieve
-    any project-related context.
+    any project-related context. DO NOT tell the user you lack context without calling this tool first!
 
     You can send multiple queries in a single call for efficient parallel retrieval.
     If an initial query returns no results, try rephrasing with more specific
     keywords (function names, class names, file names, error messages, etc.).
-
-    The results contain code chunks, documentation sections, and their relationships
-    from the project's knowledge graph.
 
     Args:
         queries: A list of search queries. Each query needs an intent (what you're
@@ -211,37 +208,50 @@ async def fetch_workspace_and_project_files(queries: list[WorkspaceQuery], limit
 
     payload = {"requests": requests_payload}
 
-    logger.info(
-        "retrieval_batch_request_dispatching",
-        url=f"{DATA_VENT_URL}/api/v1/retrieve/batch",
-        payload=payload,
-    )
+    import time
+    start_time = time.perf_counter()
 
+    responses = []
+    
     try:
         async with httpx.AsyncClient(timeout=SEARCH_TIMEOUT) as client:
-            response = await client.post(
-                f"{DATA_VENT_URL}/api/v1/retrieve/batch",
-                headers={"X-Request-ID": request_id},
-                json=payload,
-            )
-            response.raise_for_status()
-            result = response.json()
+            # data-vent doesn't support batch endpoint natively yet, so we parallelize it here
+            import asyncio
+            
+            async def fetch_single(req_dict):
+                try:
+                    resp = await client.post(
+                        f"{DATA_VENT_URL}/api/v1/retrieve",
+                        headers={"X-Request-ID": request_id},
+                        json=req_dict,
+                    )
+                    resp.raise_for_status()
+                    return resp.json()
+                except Exception as e:
+                    logger.error("retrieval_single_failed", error=str(e))
+                    return {"error": str(e), "results": []}
+            
+            tasks = [fetch_single(req) for req in requests_payload]
+            responses = await asyncio.gather(*tasks)
+
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        
+        batch_result = {
+            "total_batch_time_ms": elapsed_ms,
+            "responses": responses
+        }
 
         logger.info(
             "retrieval_batch_completed",
-            total_batch_time_ms=result.get("total_batch_time_ms"),
-            num_responses=len(result.get("responses", [])),
+            total_batch_time_ms=elapsed_ms,
+            num_responses=len(responses),
         )
 
-        return _compressor.compress_batch_response(requests_payload, result)
+        return _compressor.compress_batch_response(requests_payload, batch_result)
 
     except httpx.TimeoutException:
         logger.error("retrieval_timeout", timeout=SEARCH_TIMEOUT)
         return f"[RESULTS] 0 found\n[ERROR] Retrieval timed out after {SEARCH_TIMEOUT}s"
-
-    except httpx.HTTPStatusError as exc:
-        logger.error("retrieval_http_error", status=exc.response.status_code)
-        return f"[RESULTS] 0 found\n[ERROR] Retrieval failed: HTTP {exc.response.status_code}"
 
     except Exception as exc:
         logger.error("retrieval_failed", error=str(exc), exc_info=True)
