@@ -84,13 +84,27 @@ class CorrelationIdMiddleware:
         structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
 
         async def send_wrapper(message):
-            if message["type"] == "http.response.start":
-                # Add the correlation ID to the response headers
-                res_headers = message.setdefault("headers", [])
-                res_headers.append((b"x-correlation-id", correlation_id.encode("utf-8")))
-            await send(message)
+            try:
+                if message["type"] == "http.response.start":
+                    # Add the correlation ID to the response headers
+                    res_headers = message.setdefault("headers", [])
+                    res_headers.append((b"x-correlation-id", correlation_id.encode("utf-8")))
+                await send(message)
+            except RuntimeError as e:
+                if "Unexpected ASGI message" in str(e):
+                    # Suppress Uvicorn error caused by FastMCP returning a Response
+                    # after EventSourceResponse has already completed the request.
+                    pass
+                else:
+                    raise
 
-        await self.app(scope, receive, send_wrapper)
+        try:
+            await self.app(scope, receive, send_wrapper)
+        except RuntimeError as e:
+            if "Unexpected ASGI message" in str(e):
+                pass
+            else:
+                raise
 
 
 def create_app() -> FastAPI:
