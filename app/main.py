@@ -68,18 +68,29 @@ async def lifespan(app: FastAPI):
     logger.info("Client Connector stopped")
 
 
-class CorrelationIdMiddleware(BaseHTTPMiddleware):
+class CorrelationIdMiddleware:
     """Middleware to extract or generate a correlation ID and bind it to structlog."""
-    async def dispatch(self, request: Request, call_next):
-        correlation_id = request.headers.get("X-Correlation-ID") or str(uuid4())
-        
-        # Bind it to structlog's thread-local/async context
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] not in ("http", "websocket"):
+            return await self.app(scope, receive, send)
+
+        headers = dict(scope.get("headers", []))
+        correlation_id = headers.get(b"x-correlation-id", uuid4().hex.encode()).decode("utf-8")
+
         structlog.contextvars.clear_contextvars()
         structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
-        
-        response = await call_next(request)
-        response.headers["X-Correlation-ID"] = correlation_id
-        return response
+
+        async def send_wrapper(message):
+            if message["type"] == "http.response.start":
+                # Add the correlation ID to the response headers
+                res_headers = message.setdefault("headers", [])
+                res_headers.append((b"x-correlation-id", correlation_id.encode("utf-8")))
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
 
 
 def create_app() -> FastAPI:

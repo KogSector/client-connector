@@ -31,8 +31,11 @@ mcp = FastMCP(
 )
 
 
-# data-vent retrieval service (configured in .env.map)
-DATA_VENT_URL = os.getenv("DATA_VENT_URL", "http://127.0.0.1:3005")
+from app.config import get_settings
+
+# data-vent retrieval service (configured in .env.local/map)
+settings = get_settings()
+DATA_VENT_URL = settings.data_vent_url
 SEARCH_TIMEOUT = int(os.getenv("SEARCH_TIMEOUT_SECS", "30"))
 
 # Shared compressor instance
