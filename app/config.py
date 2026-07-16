@@ -22,10 +22,7 @@ class Settings(BaseSettings):
     port: int = Field(alias="CLIENT_CONNECTOR_PORT", default=3020)
     debug: bool = Field(default=False)
 
-    # MCP Server
-    mcp_server_path: str | None = Field(default=None, alias="MCP_SERVER_PATH")
-    mcp_server_mode: Literal["subprocess", "http"] = Field(alias="MCP_SERVER_MODE", default="http")
-    mcp_server_url: str = Field(alias="MCP_SERVER_URL")
+
 
     # Authentication
     auth_middleware_url: str = Field(alias="AUTH_MIDDLEWARE_URL")
