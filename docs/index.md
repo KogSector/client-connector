@@ -193,7 +193,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:8080
 LOG_LEVEL=INFO
 
 # PostgreSQL Configuration
-POSTGRES_HOST=ep-small-voice-a1o0n6xl-pooler.ap-southeast-1.aws.neon.tech
+POSTGRES_HOST=ep-twilight-moon-azzl2ubh-pooler.c-3.ap-southeast-1.aws.neon.tech
 POSTGRES_PORT=5432
 POSTGRES_DATABASE=neondb
 POSTGRES_USER=neondb_owner
@@ -202,7 +202,7 @@ POSTGRES_SSL=true
 
 #### `.env.secret` (Sensitive)
 ```bash
-POSTGRES_PASSWORD=your_postgres_password
+POSTGRES_PASSWORD=npg_nwMBCeG2rpW5
 JWT_SECRET_KEY=your_jwt_secret
 MCP_SERVER_API_KEY=your_mcp_api_key
 ```
