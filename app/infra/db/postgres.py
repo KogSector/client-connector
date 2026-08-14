@@ -23,7 +23,7 @@ async def init_postgresql() -> None:
     database_url = settings.database_url
 
     if not database_url:
-        logger.warning("POSTGRES_URL not set, skipping database initialization")
+        logger.warning("DATABASE_URL not set, skipping database initialization")
         return
 
     if database_url.startswith("postgresql://"):

@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     api_key_header: str = Field(default="X-API-Key")
 
     # Database
-    database_url: str = Field(alias="POSTGRES_URL")
+    database_url: str = Field(alias="DATABASE_URL")
 
     # Rate Limiting
     rate_limit_per_minute: int = Field(default=60)
