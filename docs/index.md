@@ -193,7 +193,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:8080
 LOG_LEVEL=INFO
 
 # PostgreSQL Configuration
-POSTGRES_HOST=ep-twilight-moon-azzl2ubh-pooler.c-3.ap-southeast-1.aws.neon.tech
+POSTGRES_HOST=ep-cold-band-azixxknu-pooler.c-3.ap-southeast-1.aws.neon.tech
 POSTGRES_PORT=5432
 POSTGRES_DATABASE=neondb
 POSTGRES_USER=neondb_owner
