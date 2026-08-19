@@ -55,7 +55,7 @@ ENV PYTHONPATH=/app
 # Expose port
 EXPOSE 8095
 
-# Health check optimized for Cloud Run
+# Health check optimized for Render
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8095}/health || exit 1
 
