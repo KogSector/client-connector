@@ -188,7 +188,6 @@ MCP_SERVER_MODE=http
 AUTH_MIDDLEWARE_GRPC_ADDR=http://auth-middleware:3010
 FEATURE_TOGGLE_SERVICE_URL=http://feature-toggle:3099
 DATA_VENT_URL=http://data-vent:3040
-EMBEDDINGS_SERVICE_URL=http://embeddings-service:3001
 CORS_ORIGINS=http://localhost:3000,http://localhost:8080
 LOG_LEVEL=INFO
 
