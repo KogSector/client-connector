@@ -46,12 +46,22 @@ async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     logger.info("Starting Client Connector service")
 
-    # Initialize database
-    await init_postgresql()
+    try:
+        # Initialize database
+        await init_postgresql()
+        logger.info("PostgreSQL initialized successfully")
+    except Exception as e:
+        logger.error("Failed to initialize PostgreSQL", error=str(e))
+        # Continue without database for degraded mode
+        logger.warning("Client Connector starting in degraded mode without database")
 
-    # Start session manager
-    await get_session_manager()
-    logger.info("Session manager started")
+    try:
+        # Start session manager
+        await get_session_manager()
+        logger.info("Session manager started")
+    except Exception as e:
+        logger.error("Failed to start session manager", error=str(e))
+        logger.warning("Client Connector starting without session manager")
 
     settings = get_settings()
     logger.info(
@@ -63,8 +73,16 @@ async def lifespan(app: FastAPI):
     yield
 
     logger.info("Shutting down Client Connector")
-    await shutdown_session_manager()
-    await close_postgresql()
+    try:
+        await shutdown_session_manager()
+    except Exception as e:
+        logger.error("Error shutting down session manager", error=str(e))
+    
+    try:
+        await close_postgresql()
+    except Exception as e:
+        logger.error("Error closing PostgreSQL", error=str(e))
+    
     logger.info("Client Connector stopped")
 
 
