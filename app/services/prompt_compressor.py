@@ -273,6 +273,68 @@ class PromptCompressor:
 
     # ── Response compression ─────────────────────────────────────────────
 
+    def compress_single_result(self, r: dict[str, Any]) -> str:
+        """
+        Convert a single chunk or graph node from data-vent into compact text format.
+        Used for streaming individual results directly to the LLM agent.
+        """
+        lines: list[str] = []
+
+        # Check if this result looks like a Graph node (has id and type/label)
+        node_type = r.get("type", r.get("label", r.get("node_type")))
+        node_id = r.get("id", r.get("node_id"))
+
+        if node_type and node_id:
+            # TOON Serialization for Graph Nodes
+            props = dict(r.get("properties", r.get("metadata", {})))
+
+            # Extract score if available
+            score = r.get("final_score", r.get("similarity_score", r.get("score")))
+            if score is not None:
+                props["score"] = f"{score:.3f}" if isinstance(score, float) else str(score)
+
+            # Format properties as concise key=value pairs
+            props_str = ", ".join(
+                f"{k}={v}"
+                for k, v in props.items()
+                if k not in ["content", "text", "relationships", "edges"]
+            )
+
+            if props_str:
+                lines.append(f"Node | {node_type}:{node_id} | {props_str}")
+            else:
+                lines.append(f"Node | {node_type}:{node_id}")
+
+            # Format relationships (TOON style graph edges)
+            rels = r.get("relationships", r.get("edges", []))
+            for rel in rels:
+                rel_type = rel.get("type", rel.get("label", "RELATED_TO"))
+                target = rel.get("target", rel.get("target_id", "Unknown"))
+                lines.append(f"  -> {rel_type} -> {target}")
+
+            # Handle raw content (like code snippets)
+            content = r.get("content", r.get("text", ""))
+            if content:
+                if len(content) > 2000:
+                    content = content[:2000] + "\n...[TRUNCATED]"
+                lines.append(content.strip())
+
+            return "\n".join(lines)
+
+        # TOON-style standard chunk processing fallback
+        score = r.get("final_score", r.get("similarity_score", r.get("score", 0.0)))
+        score_str = f"{score:.3f}" if isinstance(score, float) else str(score)
+        source = r.get("source_id", r.get("source", r.get("document_id", "-")))
+
+        lines.append(f"Chunk | {source} | score={score_str}")
+
+        content = r.get("content", r.get("text", ""))
+        if len(content) > 2000:
+            content = content[:2000] + "\n...[TRUNCATED]"
+
+        lines.append(content.strip())
+        return "\n".join(lines)
+
     def compress_response(self, data: dict[str, Any]) -> str:
         """
         Convert data-vent RetrieveResponse JSON into compact tabular text.
@@ -303,60 +365,7 @@ class PromptCompressor:
         lines.append("")
 
         for r in results:
-            # Check if this result looks like a Graph node (has id and type/label)
-            node_type = r.get("type", r.get("label", r.get("node_type")))
-            node_id = r.get("id", r.get("node_id"))
-
-            if node_type and node_id:
-                # TOON Serialization for Graph Nodes
-                props = r.get("properties", r.get("metadata", {}))
-
-                # Extract score if available
-                score = r.get("final_score", r.get("similarity_score", r.get("score")))
-                if score is not None:
-                    props["score"] = f"{score:.3f}" if isinstance(score, float) else str(score)
-
-                # Format properties as concise key=value pairs
-                props_str = ", ".join(
-                    f"{k}={v}"
-                    for k, v in props.items()
-                    if k not in ["content", "text", "relationships", "edges"]
-                )
-
-                if props_str:
-                    lines.append(f"Node | {node_type}:{node_id} | {props_str}")
-                else:
-                    lines.append(f"Node | {node_type}:{node_id}")
-
-                # Format relationships (TOON style graph edges)
-                rels = r.get("relationships", r.get("edges", []))
-                for rel in rels:
-                    rel_type = rel.get("type", rel.get("label", "RELATED_TO"))
-                    target = rel.get("target", rel.get("target_id", "Unknown"))
-                    lines.append(f"  -> {rel_type} -> {target}")
-
-                # Handle raw content (like code snippets)
-                content = r.get("content", r.get("text", ""))
-                if content:
-                    if len(content) > 2000:
-                        content = content[:2000] + "\n...[TRUNCATED]"
-                    lines.append(content.strip())
-
-                lines.append("")
-                continue
-
-            # TOON-style standard chunk processing fallback
-            score = r.get("final_score", r.get("similarity_score", r.get("score", 0.0)))
-            score_str = f"{score:.3f}" if isinstance(score, float) else str(score)
-            source = r.get("source_id", r.get("source", r.get("document_id", "-")))
-
-            lines.append(f"Chunk | {source} | score={score_str}")
-
-            content = r.get("content", r.get("text", ""))
-            if len(content) > 2000:
-                content = content[:2000] + "\n...[TRUNCATED]"
-
-            lines.append(content.strip())
+            lines.append(self.compress_single_result(r))
             lines.append("")
 
         return "\n".join(lines)

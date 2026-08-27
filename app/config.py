@@ -34,6 +34,12 @@ class Settings(BaseSettings):
     # Rate Limiting
     rate_limit_per_minute: int = Field(default=60)
     rate_limit_burst: int = Field(default=10)
+    tier_rate_limits: dict[str, dict[str, int]] = Field(default={
+        "free": {"per_minute": 60, "burst": 10},
+        "pro": {"per_minute": 240, "burst": 20},
+        "team": {"per_minute": 480, "burst": 30},
+        "enterprise": {"per_minute": 1000, "burst": 50},
+    })
 
     # Session
     session_timeout_minutes: int = Field(default=60)

@@ -26,6 +26,9 @@ class ClientSession(BaseModel):
     user_id: str | None = None
     api_key_id: str | None = None
     tenant_id: str | None = None  # Multi-tenant support
+    subscription_tier: str = "free"
+    rate_limit_remaining: int = 60
+    rate_limit_reset_at: datetime | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     class Config:
@@ -48,6 +51,7 @@ class ClientSession(BaseModel):
             "user_id": self.user_id,
             "tenant_id": self.tenant_id,
             "api_key_id": self.api_key_id,
+            "subscription_tier": self.subscription_tier,
         }
 
 
@@ -80,16 +84,25 @@ class SessionManager:
         user_id: str | None = None,
         api_key_id: str | None = None,
         tenant_id: str | None = None,
+        subscription_tier: str = "free",
     ) -> ClientSession:
         """Create a new client session."""
         async with self._lock:
             if len(self._sessions) >= self.settings.max_concurrent_clients:
                 raise RuntimeError("Maximum concurrent clients reached")
 
+            tier_limits = self.settings.tier_rate_limits.get(
+                subscription_tier,
+                self.settings.tier_rate_limits.get("free", {"per_minute": 60}),
+            )
+            initial_limit = tier_limits.get("per_minute", 60)
+
             session = ClientSession(
                 user_id=user_id,
                 api_key_id=api_key_id,
                 tenant_id=tenant_id,
+                subscription_tier=subscription_tier,
+                rate_limit_remaining=initial_limit,
             )
             self._sessions[session.id] = session
 
@@ -98,6 +111,7 @@ class SessionManager:
                 session_id=str(session.id),
                 user_id=user_id,
                 tenant_id=tenant_id,
+                subscription_tier=subscription_tier,
             )
             return session
 
