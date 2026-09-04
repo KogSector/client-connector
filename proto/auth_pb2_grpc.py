@@ -6,7 +6,7 @@ import warnings
 try:
     from . import auth_pb2 as auth__pb2
 except ImportError:
-    import auth_pb2 as auth__pb2
+    import auth_pb2 as auth__pb2  # type: ignore
 
 GRPC_GENERATED_VERSION = '1.80.0'
 GRPC_VERSION = grpc.__version__
