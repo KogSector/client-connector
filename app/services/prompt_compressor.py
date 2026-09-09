@@ -393,3 +393,27 @@ class PromptCompressor:
             lines.append("")
 
         return "\n".join(lines)
+
+    def compress_multi_hop_response(self, data: dict[str, Any]) -> str:
+        """
+        Convert multi-hop shortest paths result into compact text format.
+        """
+        paths = data.get("paths", [])
+        source = data.get("source_chunk_id", "")
+        target = data.get("target_chunk_id", "")
+        total_time_ms = data.get("total_time_ms", 0.0)
+
+        lines = [f"[MULTI-HOP PATHS] {len(paths)} path(s) found between {source} -> {target} [TIME] {total_time_ms:.0f}ms\n"]
+        if not paths:
+            lines.append("No path found within the specified hop limit.")
+            return "\n".join(lines)
+
+        for i, p in enumerate(paths, 1):
+            hops = p.get("hops", 0)
+            weight = p.get("path_weight", 0.0)
+            node_ids = p.get("node_ids", [])
+            chain = " -> ".join(node_ids) if node_ids else f"{source} -> ... -> {target}"
+            lines.append(f"Path #{i}: {hops} hops (weight: {weight:.3f})")
+            lines.append(f"  Chain: {chain}\n")
+
+        return "\n".join(lines)
