@@ -5,9 +5,11 @@ build/
 coverage/
 .env
 .env.*
-.env.map
-.env.secret
+.map.env
+.secret.env
 !.env.example
+!.map.env.example
+!.secret.env.example
 npm-debug.log
 yarn-error.log
 *.pyc

@@ -22,8 +22,8 @@ source .venv/bin/activate  # Linux/Mac
 pip install -e .
 
 # Configure environment
-cp .env.map.example .env.map
-cp .env.secret.example .env.secret
+cp .map.env.example .map.env
+cp .secret.env.example .secret.env
 
 # Start the service
 uvicorn app.main:app --host 0.0.0.0 --port 3020
@@ -178,7 +178,7 @@ prompts/get                    - Get prompt template
 
 ### Required Environment Variables
 
-#### `.env.map` (Non-sensitive)
+#### `.map.env` (Non-sensitive)
 ```bash
 PORT=3020
 HOST=0.0.0.0
@@ -199,7 +199,7 @@ POSTGRES_USER=neondb_owner
 POSTGRES_SSL=true
 ```
 
-#### `.env.secret` (Sensitive)
+#### `.secret.env` (Sensitive)
 ```bash
 POSTGRES_PASSWORD=npg_nwMBCeG2rpW5
 JWT_SECRET_KEY=your_jwt_secret
